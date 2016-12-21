@@ -9,6 +9,10 @@ from utils.config_utils import get_config
 from utils.encrypt_utils import encrypted_request
 from utils.logger_utils import data_process_logger
 
+"""
+Created by jayvee on 16/12/14.
+"""
+
 config_infos = get_config()
 csrf_token = config_infos['csrf_token']
 
