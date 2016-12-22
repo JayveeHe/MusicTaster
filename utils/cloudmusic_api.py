@@ -106,6 +106,25 @@ def song_detail(song_ids, offset=0):
         return []
 
 
+def user_details(uid):
+    """
+    根据uid获取用户详情(通过歌单列表间接获取creator信息)
+    :param uid:
+    :return:
+    """
+    # upl = user_playlist(uid, limit=1)
+    base_url = 'http://music.163.com/api/user/playlist/?offset=%s&limit=%s&uid=%s' % (0, 0, uid)
+    # data = {'offset': offset, 'limit': limit, 'uid': uid}
+    try:
+        # data = urlencode(data)
+        res = requests.get(base_url, headers=header).content
+        data = json.loads(res)
+        return data['playlist'][0]['creator']
+    except (requests.exceptions.RequestException, KeyError) as e:
+        data_process_logger.error(e)
+        return -1
+
+
 def search_web(s_name, type, limit=10):
     """
     网页搜索api
@@ -121,25 +140,6 @@ def search_web(s_name, type, limit=10):
         res = requests.post(search_url, d, headers=header).content
         data = json.loads(res)
         return data
-    except (requests.exceptions.RequestException, KeyError) as e:
-        data_process_logger.error(e)
-        return -1
-
-
-def user_details(uid):
-    """
-    根据uid获取用户详情(通过歌单列表间接获取creator信息)
-    :param uid:
-    :return:
-    """
-    # upl = user_playlist(uid, limit=1)
-    base_url = 'http://music.163.com/api/user/playlist/?offset=%s&limit=%s&uid=%s' % (0, 0, uid)
-    # data = {'offset': offset, 'limit': limit, 'uid': uid}
-    try:
-        # data = urlencode(data)
-        res = requests.get(base_url, headers=header).content
-        data = json.loads(res)
-        return data['playlist'][0]['creator']
     except (requests.exceptions.RequestException, KeyError) as e:
         data_process_logger.error(e)
         return -1
