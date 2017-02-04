@@ -11,6 +11,16 @@ DB_PORT = db_config['db_port']
 
 
 def get_db_inst(db_name, collection_name):
+    """
+    get mongoDB instance by db name and collection name
+    Args:
+        db_name:
+        collection_name:
+
+    Returns:
+        db instance
+
+    """
     client = pymongo.MongoClient(DB_IP, DB_PORT)
     try:
         db_inst = client.get_database(db_name).get_collection(collection_name)
@@ -29,3 +39,4 @@ def find_all(find_filter, db_inst, sort_filter=None):
 
     if not sort_filter:
         db_inst.find(find_filter)
+

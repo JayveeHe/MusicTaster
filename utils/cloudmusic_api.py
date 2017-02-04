@@ -11,10 +11,11 @@ from utils.logger_utils import data_process_logger
 
 """
 Created by jayvee on 16/12/14.
+主要用于不加处理地调用云音乐的API,返回数据均为remote端原始数据
 """
 
 config_infos = get_config()
-csrf_token = config_infos['csrf_token']
+# csrf_token = config_infos['csrf_token']
 
 header = {
     'Accept': '*/*',
@@ -32,10 +33,13 @@ cookies = {'appver': '1.5.2'}
 
 def user_login(username, password):
     """
-    用户登录api
-    :param username:
-    :param password:
-    :return:
+    用户登录api(手机登录)
+
+    Args:
+        username: 用户账号,手机号
+        password: 密码
+    Returns:
+        result: a json obj of user data
     """
     base_url = 'https://music.163.com/weapi/login/cellphone'
     login_url = 'https://music.163.com/weapi/login/'
@@ -48,8 +52,13 @@ def user_login(username, password):
     data = encrypted_request(text)
     # s = requests.session()
     # s.headers = header
-    res = requests.post(base_url, data=data, headers=header).content
-    print res
+    try:
+        res = requests.post(base_url, data=data, headers=header).content
+        result = json.loads(res)
+        return result
+    except Exception, e:
+        data_process_logger.error('%s login failed, reason = %s' % (username, e))
+        return -1
 
 
 def playlist_detail(playlist_id):
