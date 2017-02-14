@@ -67,14 +67,14 @@ def user_login(username, password):
         return -1
 
 
-def playlist_detail(playlist_id, limit=2000):
+def playlist_detail(playlist_id, limit=1000):
     """
     根据歌单id获取歌单的详情
     :param playlist_id:playlist id
     :return: playlist info json text
 
     Args:
-        limit:
+        limit:最大歌曲数为1000
     """
     for i in range(retry_times):
         try:
@@ -230,7 +230,7 @@ def search_web(s_name, type, limit=10):
 
 if __name__ == '__main__':
     pass
-    a = playlist_detail(85224880,limit=500)
+    a = playlist_detail(85224880, limit=500)
     # print a
     b = user_playlist('2886507', limit=1000)
     # print b

@@ -26,10 +26,11 @@ class CloudMusicDAO:
         Returns:
 
         """
-        find_result = self.db_inst.find({primary_key: data_obj[primary_key]})
+        find_result = self.db_inst.find_one({primary_key: data_obj[primary_key]}, {primary_key: 1})
         # is_exist = user_dbinst.find({'userId': userinfo['userId']}).count() != 0
         # print find_result.count()
-        if not find_result.count():
+
+        if not find_result:
             self.db_inst.insert(data_obj)
         elif is_overwrite:
             self.db_inst.update({primary_key: data_obj[primary_key]}, data_obj)
