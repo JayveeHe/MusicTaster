@@ -34,10 +34,11 @@ def fetch_login_userdata(username, password):
         data_process_logger.warn('fetch login userdata failed')
 
 
-def fetch_user_networks(start_id=None):
+def fetch_user_networks(start_id=None, max_user_count=5000):
     """
     启动用户信息爬取的函数
     Args:
+        max_user_count: 本次最大爬取的用户数
         start_id: 入口id,如果没有则在数据库中任取一个
 
     Returns:
@@ -49,7 +50,6 @@ def fetch_user_networks(start_id=None):
     # u_profile = user_profile(start_id)
     if not start_id:
         start_id = db_userinfo.find_one()['userId']
-    max_step = 5000
     idlist = set()
     idlist.add(start_id)
     # save start user info
@@ -59,7 +59,7 @@ def fetch_user_networks(start_id=None):
         idlist.add(i['userId'])
     # result_count = find_result.count()
     user_count = 0
-    while len(idlist) > 0 and user_count < max_step and cur_id:
+    while len(idlist) > 0 and user_count < max_user_count and cur_id:
         if db_userinfo.find({'userId': cur_id}).count() != 0:
             # slp = random.random() * 1 + 0.5
             data_process_logger.info('[SKIP] No.%s User %s skip!' % (user_count, cur_id))
@@ -99,25 +99,6 @@ def fetch_user_networks(start_id=None):
     print 'done'
 
 
-def update_userinfo():
-    """
-    临时更新数据库的脚本
-    Returns:
-
-    """
-    DAO_inst = CloudMusicDAO('MusicTaster', 'UserInfos')
-    uids = DAO_inst.db_inst.distinct('userId')
-    count = 0
-    for uid in uids:
-        userinfo = DAO_inst.db_inst.find_one({'userId': uid})
-        userinfo['follow_count'] = len(userinfo['follow_ids'])
-        userinfo['fan_count'] = len(userinfo['fan_ids'])
-        DAO_inst.save_unique_item(userinfo, primary_key='userId', is_overwrite=True)
-        data_process_logger.info('No.%s %s-%s' % (count, userinfo['userId'], userinfo['nickname']))
-        count += 1
-    print 'done'
-
-
 def fetch_playlist(max_user_count=100):
     """
     进行用户歌单的抓取,同时更新UserInfos、SongInfos和Plyalists三个数据库的信息
@@ -150,19 +131,24 @@ def fetch_playlist(max_user_count=100):
                 # 首先查看是否在数据库中有
                 pl_obj = playlist_dao_inst.db_inst.find_one({'id': pl_info['id']})
                 if not pl_obj:
-                    pl_obj = playlist_detail(pl_info['id'])['result']
-                    pl_song_ids = []
-                    for song in pl_obj['tracks']:
-                        # print song
-                        song_dao_inst.save_unique_item(song, primary_key='id')
-                        pl_song_ids.append(song['id'])
-                    # 在playlist中保存track信息,只保存编号
-                    user_playlists[i]['tracks_ids'] = pl_song_ids
-                    pl_obj['tracks_ids'] = pl_song_ids
-                    playlist_dao_inst.save_unique_item(pl_obj, primary_key='id', is_inform=True)
-                    slp = random.random() * 2 + 1
-                    # data_process_logger.info('sleep %s sec' % slp)
-                    time.sleep(slp)
+                    try:
+                        pl_obj = playlist_detail(pl_info['id'])
+                        pl_song_ids = []
+                        if pl_obj != -1:
+                            for song in pl_obj['tracks']:
+                                song_dao_inst.save_unique_item(song, primary_key='id')
+                                pl_song_ids.append(song['id'])
+                            # 在playlist中保存track信息,只保存编号
+                            user_playlists[i]['tracks_ids'] = pl_song_ids
+                            pl_obj['tracks_ids'] = pl_song_ids
+                            playlist_dao_inst.save_unique_item(pl_obj, primary_key='id', is_inform=True)
+                            slp = random.random() * 2 + 1
+                            # data_process_logger.info('sleep %s sec' % slp)
+                            time.sleep(slp)
+                        else:
+                            data_process_logger.error('cannot fetch %s %s' % (pl_info['id'], pl_info['name']))
+                    except Exception, e:
+                        print e
                 else:
                     user_playlists[i]['tracks_ids'] = pl_obj['tracks_ids']
 
@@ -180,7 +166,8 @@ def fetch_playlist(max_user_count=100):
 if __name__ == '__main__':
     # login_user_info = fetch_login_userdata('', '')
     # start_id = login_user_info['profile']['userId']
-    tmp_id = 2886507
+    # tmp_id = 2886507
+    # fill_song_comments()
     # fetch_user_networks()
     fetch_playlist(max_user_count=1000)
     # update_userinfo()
