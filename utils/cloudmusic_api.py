@@ -70,10 +70,9 @@ def user_login(username, password):
 def playlist_detail(playlist_id, limit=1000):
     """
     根据歌单id获取歌单的详情
-    :param playlist_id:playlist id
-    :return: playlist info json text
 
     Args:
+        playlist_id:
         limit:最大歌曲数为1000
     """
     for i in range(retry_times):
@@ -81,9 +80,14 @@ def playlist_detail(playlist_id, limit=1000):
             base_url = 'http://music.163.com/api/playlist/detail?id=%s&limit=%s' % (playlist_id, limit)
             res = requests.get(base_url, headers=header).content
             # print res
-            return json.loads(res)
+            jsonobj = json.loads(res)
+            if jsonobj['code'] == 200:
+                return json.loads(res)['result']
+            else:
+                data_process_logger.error('error! result = %s' % res)
         except Exception, e:
             data_process_logger.error('%s playlist failed, reason = %s' % (playlist_id, e))
+            data_process_logger.warn('%s playlist retrying...' % (playlist_id))
             continue
     return -1
 
@@ -106,6 +110,7 @@ def user_playlist(uid, offset=0, limit=1000):
             return data['playlist']
         except (requests.exceptions.RequestException, KeyError) as e:
             data_process_logger.error(e)
+            data_process_logger.warn('retrying...')
     return -1
 
 
@@ -129,6 +134,7 @@ def song_detail(song_ids, offset=0):
             return data['songs']
         except requests.exceptions.RequestException as e:
             data_process_logger.error(e)
+            data_process_logger.warn('retrying...')
     return []
 
 
@@ -149,7 +155,7 @@ def user_profile(uid):
             return data['playlist'][0]['creator']
         except (requests.exceptions.RequestException, KeyError) as e:
             data_process_logger.error(e)
-            data_process_logger.warn('retry')
+            data_process_logger.warn('retrying...')
             continue
     return -1
 
@@ -161,7 +167,7 @@ def user_follows(uid):
     :return:
     """
     # upl = user_playlist(uid, limit=1)
-    base_url = 'http://music.163.com/weapi/user/getfollows/%s?csrf_token=5c49a1f533701460855c496b9be5579f' % (uid)
+    base_url = 'http://music.163.com/weapi/user/getfollows/%s' % (uid)
     # data = {'offset': offset, 'limit': limit, 'uid': uid}
     for i in range(retry_times):
         try:
@@ -175,7 +181,7 @@ def user_follows(uid):
             return data['follow']
         except (requests.exceptions.RequestException, KeyError) as e:
             data_process_logger.error(e)
-            data_process_logger.warn('retry')
+            data_process_logger.warn('retrying...')
             continue
     return -1
 
@@ -187,7 +193,7 @@ def user_fans(uid):
     :return:
     """
     # upl = user_playlist(uid, limit=1)
-    base_url = 'http://music.163.com/weapi/user/getfolloweds/?csrf_token=5c49a1f533701460855c496b9be5579f'
+    base_url = 'http://music.163.com/weapi/user/getfolloweds/'
     # data = {'offset': offset, 'limit': limit, 'uid': uid}
     for i in range(retry_times):
         try:
@@ -202,7 +208,35 @@ def user_fans(uid):
             return data['followeds']
         except (requests.exceptions.RequestException, KeyError) as e:
             data_process_logger.error(e)
-            data_process_logger.warn('retry')
+            data_process_logger.warn('retrying...')
+            continue
+    return -1
+
+
+def song_comments(commentThreadId, limit=10, offset=0):
+    """
+    根据commentThreadId获取歌曲评论
+
+    """
+    # upl = user_playlist(uid, limit=1)
+    base_url = 'http://music.163.com/weapi/v1/resource/comments/%s/' % commentThreadId
+    # data = {'offset': offset, 'limit': limit, 'uid': uid}
+    for i in range(retry_times):
+        try:
+            # data = urlencode(data)
+            text = {
+                'limit': limit, 'offset': offset
+            }
+            data = encrypted_request(text)
+            res = requests.post(base_url, data=data, headers=header, proxies=random.choice(proxylist)).content
+            data = json.loads(res)
+            if data['code'] == 200:
+                return data
+            else:
+                print 'error, details = %s' % data
+        except (requests.exceptions.RequestException, KeyError) as e:
+            data_process_logger.error(e)
+            data_process_logger.warn('retrying...')
             continue
     return -1
 
@@ -225,18 +259,21 @@ def search_web(s_name, type, limit=10):
             return data
         except (requests.exceptions.RequestException, KeyError) as e:
             data_process_logger.error(e)
+            data_process_logger.warn('retrying...')
     return -1
 
 
 if __name__ == '__main__':
     pass
-    a = playlist_detail(85224880, limit=500)
+    comms = song_comments('R_SO_4_26612932')
+    print 'd'
+    # a = playlist_detail(326069502, limit=500)
     # print a
-    b = user_playlist('2886507', limit=1000)
+    # b = user_playlist('2886507', limit=1000)
     # print b
-    c = song_detail(['37239018', '23'])
+    # c = song_detail(['37239018', '23'])
     # d = user_profile('2886507')
     # f = user_follows('2886507')
     # fans = user_fans('2886507')
     # i = user_infos('2886507')
-    print search_web('jayvee he', '1002', 10)
+    # print search_web('jayvee he', '1002', 10)
