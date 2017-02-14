@@ -1,5 +1,5 @@
 # coding=utf-8
-from utils.cloudmusic_api import user_playlist, user_details, song_detail
+from utils.cloudmusic_api import user_playlist, user_profile, song_detail
 from utils.logger_utils import data_process_logger
 
 """
@@ -54,7 +54,7 @@ class User(InfoObj):
         填充用户信息
         :return: None
         """
-        u_details = user_details(self.uid)
+        u_details = user_profile(self.uid)
         if u_details != -1:
             self.details = u_details
             self.__has_details = True
