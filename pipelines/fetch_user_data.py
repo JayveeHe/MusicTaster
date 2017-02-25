@@ -163,10 +163,58 @@ def fetch_playlist(max_user_count=100):
     print 'done'
 
 
+def get_user_playlist(uid):
+    user_dao_inst = CloudMusicDAO('MusicTaster', 'UserInfos')
+    playlist_dao_inst = CloudMusicDAO('MusicTaster', 'Playlists')
+    song_dao_inst = CloudMusicDAO('MusicTaster', 'SongInfos')
+    # count = 0
+    userinfo = user_dao_inst.db_inst.find_one({"userId": uid})
+    # fetch playlist ids
+    user_playlists = user_playlist(uid, limit=2000)
+    data_process_logger.info(
+        'processing the playlist of %s\nTotal playlist = %s' % (userinfo['nickname'], len(user_playlists)))
+    if len(user_playlists):
+        for i in range(len(user_playlists)):
+            pl_info = user_playlists[i]
+            data_process_logger.info(
+                'processing %s No.%s playlist: %s, total song: %s' % (
+                    userinfo['nickname'], i, pl_info['name'], pl_info['trackCount']))
+            # fetch playlist details
+            # 首先查看是否在数据库中有
+            pl_obj = playlist_dao_inst.db_inst.find_one({'id': pl_info['id']})
+            if not pl_obj:
+                try:
+                    pl_obj = playlist_detail(pl_info['id'])
+                    pl_song_ids = []
+                    if pl_obj != -1:
+                        for song in pl_obj['tracks']:
+                            song_dao_inst.save_unique_item(song, primary_key='id')
+                            pl_song_ids.append(song['id'])
+                        # 在playlist中保存track信息,只保存编号
+                        user_playlists[i]['tracks_ids'] = pl_song_ids
+                        pl_obj['tracks_ids'] = pl_song_ids
+                        playlist_dao_inst.save_unique_item(pl_obj, primary_key='id', is_inform=True)
+                        slp = random.random() * 2 + 1
+                        # data_process_logger.info('sleep %s sec' % slp)
+                        time.sleep(slp)
+                    else:
+                        data_process_logger.error('cannot fetch %s %s' % (pl_info['id'], pl_info['name']))
+                except Exception, e:
+                    print e
+            else:
+                user_playlists[i]['tracks_ids'] = pl_obj['tracks_ids']
+
+    # 在userinfo中保存playlist信息
+    userinfo['playlists'] = user_playlists
+    user_dao_inst.save_unique_item(userinfo, primary_key='userId', is_overwrite=True, is_inform=True)
+    data_process_logger.info('%s playlist handled!' % (userinfo['nickname']))
+
+
 if __name__ == '__main__':
     # login_user_info = fetch_login_userdata('', '')
     # start_id = login_user_info['profile']['userId']
-    # tmp_id = 2886507
+    tmp_id = 2886507
+    # get_user_playlist(tmp_id)
     # fill_song_comments()
     # fetch_user_networks()
     fetch_playlist(max_user_count=1000)
