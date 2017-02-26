@@ -27,9 +27,11 @@ class Song2VecOperator:
             if song2vec_model_path:
                 with open(song2vec_model_path, 'rb') as s2v_file:
                     self.song2vec_model = cPickle.load(s2v_file)
+                    print self.song2vec_model.estimate_memory()
             if artist2vec_model_path:
                 with open(artist2vec_model_path, 'rb') as a2v_file:
                     self.artist2vec_model = cPickle.load(a2v_file)
+                    print self.artist2vec_model.estimate_memory()
             self.song2vec_model.init_sims()
             self.artist2vec_model.init_sims()
         except IOError, ioe:
@@ -127,7 +129,8 @@ class Song2VecOperator:
             label = cluster_result.labels_[i]
             index = i
             cluster_array[label].append(song_list[i])
-        return cluster_array
+        return cluster_array, playlist_obj['name']
+
 
 if __name__ == '__main__':
     s2vo = Song2VecOperator(song2vec_model_path='../datas/[full]50d_20iter_10win_5min_song2vec.model',

@@ -6,7 +6,6 @@ from urllib import urlencode
 
 import requests
 
-from utils.config_utils import get_config
 from utils.encrypt_utils import encrypted_request
 from utils.logger_utils import data_process_logger
 

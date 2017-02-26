@@ -1,5 +1,5 @@
 requests
 pyopenssl
 pycrypto
-gensim
+gensim==0.12.4
 sklearn

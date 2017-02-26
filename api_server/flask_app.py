@@ -27,8 +27,9 @@ from utils.logger_utils import data_process_logger
 app = Flask(__name__)
 
 data_process_logger.info('initing song2vec operator')
-s2v_operator = Song2VecOperator(song2vec_model_path='../datas/[full]50d_20iter_10win_5min_song2vec.model',
-                                artist2vec_model_path='../datas/[full]50d_20iter_10win_5min_artist2vec.model')
+s2v_operator = Song2VecOperator(
+    song2vec_model_path='%s/datas/[full_reduced]50d_20iter_10win_5min_song2vec.model' % PROJECT_PATH,
+    artist2vec_model_path='%s/datas/[full_reduced]50d_20iter_10win_5min_artist2vec.model' % PROJECT_PATH)
 data_process_logger.info('complete init song2vec')
 
 
@@ -98,8 +99,8 @@ def cluster_playlist_by_url():
             cluster_n = eval(request.args.get('cluster_n'))
         else:
             cluster_n = 5
-        cluster_res = s2v_operator.cluster_in_playlist(plid, cluster_n=cluster_n)
-        result = {'code': 200, 'result': cluster_res}
+        cluster_res, playlist_name = s2v_operator.cluster_in_playlist(plid, cluster_n=cluster_n)
+        result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
         res = {'code': 400, 'error_msg': e}
@@ -112,4 +113,4 @@ def lower_array(arr):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=2334, debug=False)
+    app.run(host='0.0.0.0', port=2335, debug=False)

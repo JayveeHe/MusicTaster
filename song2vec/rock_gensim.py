@@ -4,6 +4,8 @@
 Created by jayvee on 17/2/16.
 https://github.com/JayveeHe
 """
+import random
+
 import gensim
 import pickle
 from gensim import corpora
@@ -71,6 +73,8 @@ def train_song2vec_model(fout_path, input_datas=None, data_path=None, min_count=
     if not input_datas and data_path:
         input_datas = pickle.load(open(data_path, 'rb'))
     data_process_logger.info('start training')
+    random.shuffle(input_datas)
+    input_datas = input_datas[:45000]
     wv_model = gensim.models.Word2Vec(input_datas, min_count=min_count, sorted_vocab=sorted_vocab, window=window,
                                       size=size, iter=iter_n)
     with open(fout_path, 'wb') as fout:
@@ -156,11 +160,11 @@ def test_song2vec():
     window = 10
     size = 50
     iter_n = 20
-    modelpath = '../datas/[%s]%sd_%siter_%swin_%smin_song2vec.model' % (tag, size, iter_n, window, min_count)
-    # train_song2vec_model(fout_path=modelpath, data_path='../datas/songs_seq_%s.dat' % tag,
-    #                      min_count=min_count,
-    #                      sorted_vocab=sorted_vocab, window=window,
-    #                      size=size, iter_n=iter_n)
+    modelpath = '../datas/[%s_reduced]%sd_%siter_%swin_%smin_song2vec.model' % (tag, size, iter_n, window, min_count)
+    train_song2vec_model(fout_path=modelpath, data_path='../datas/songs_seq_%s.dat' % tag,
+                         min_count=min_count,
+                         sorted_vocab=sorted_vocab, window=window,
+                         size=size, iter_n=iter_n)
     print 'model params:\tag: %s\tnmin: %s\twin: %s\tsize: %s\titer_n: %s' % (tag, min_count, window, size, iter_n)
     with open(modelpath, 'rb') as fin:
         data_process_logger.info('loading')
