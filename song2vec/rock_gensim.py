@@ -24,10 +24,10 @@ def prepare_song_dict(tag=''):
     """
     playlist_dao_inst = CloudMusicDAO('MusicTaster', 'Playlists')
     print playlist_dao_inst.db_inst.find(
-        {'trackCount': {'$gte': 5, '$lte': 1000}, 'playCount': {'$gte': 5}},
+        {'trackCount': {'$gte': 3, '$lte': 1000}, 'playCount': {'$gte': 1}},
         {'tracks': 1, 'name': 1}).limit(100000).count()
     find_result = playlist_dao_inst.db_inst.find(
-        {'trackCount': {'$gte': 5, '$lte': 1000}, 'playCount': {'$gte': 5}},
+        {'trackCount': {'$gte': 3, '$lte': 1000}, 'playCount': {'$gte': 1}},
         {'tracks': 1, 'name': 1}).limit(100000)
     # 将歌单中的歌曲名组合成歌曲名序列
     total_song_set = []

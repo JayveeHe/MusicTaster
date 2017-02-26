@@ -6,20 +6,30 @@ https://github.com/JayveeHe
 """
 import pickle
 
+import cPickle
 from gensim import matutils
 from gensim.models.word2vec_inner import REAL
 from numpy.core.multiarray import ndarray, array, dot
+from sklearn.cluster import AffinityPropagation
+
+from utils.cloudmusic_api import playlist_detail
 
 
 class Song2VecOperator:
     def __init__(self, song2vec_model_path=None, artist2vec_model_path=None):
+        """
+        初始化,需要填入两种模型的地址
+        Args:
+            song2vec_model_path:
+            artist2vec_model_path:
+        """
         try:
             if song2vec_model_path:
                 with open(song2vec_model_path, 'rb') as s2v_file:
-                    self.song2vec_model = pickle.load(s2v_file)
+                    self.song2vec_model = cPickle.load(s2v_file)
             if artist2vec_model_path:
                 with open(artist2vec_model_path, 'rb') as a2v_file:
-                    self.artist2vec_model = pickle.load(a2v_file)
+                    self.artist2vec_model = cPickle.load(a2v_file)
             self.song2vec_model.init_sims()
             self.artist2vec_model.init_sims()
         except IOError, ioe:
@@ -85,15 +95,48 @@ class Song2VecOperator:
         except Exception, e:
             print 'error = %s' % e
 
+    def cluster_in_playlist(self, playlist_id, cluster_n=5):
+        """
+        获取单个歌单内的歌曲聚类信息
+        Args:
+            playlist_id: 歌单id
+            cluster_n:聚类数
+
+        Returns:
+            聚类后的列表
+        """
+        playlist_obj = playlist_detail(playlist_id)
+        song_list = []
+        vec_list = []
+        ap_cluster = AffinityPropagation()
+        for item in playlist_obj['tracks']:
+            song = item['name'].lower()
+            print song
+            song_list.append(song)
+            # print self.song2vec_model.vocab.get(song)
+            # print self.song2vec_model.syn0norm == None
+            if self.song2vec_model.vocab.get(song) and self.song2vec_model.syn0norm != None:
+                song_vec = self.song2vec_model.syn0norm[self.song2vec_model.vocab[song].index]
+            else:
+                print '%s not in dataset' % song
+                song_vec = [0 for i in range(self.song2vec_model.vector_size)]
+            vec_list.append(song_vec)
+        cluster_result = ap_cluster.fit(vec_list, song_list)
+        cluster_array = [[] for i in range(len(cluster_result.cluster_centers_indices_))]
+        for i in range(len(cluster_result.labels_)):
+            label = cluster_result.labels_[i]
+            index = i
+            cluster_array[label].append(song_list[i])
+        return cluster_array
 
 if __name__ == '__main__':
     s2vo = Song2VecOperator(song2vec_model_path='../datas/[full]50d_20iter_10win_5min_song2vec.model',
                             artist2vec_model_path='../datas/[full]50d_20iter_10win_5min_artist2vec.model')
-    res = s2vo.calc_song_artist_similar(positive_songs=[u'time machine', u'yellow', u'viva la vida'],
-                                        negative_songs=[],
-                                        positive_artists=[],
-                                        negative_artists=[],
-                                        artist_weight=1.0, topn=20)
-
-    for i in res:
-        print i[0], i[1]
+    # res = s2vo.calc_song_artist_similar(positive_songs=[u'time machine', u'yellow', u'viva la vida'],
+    #                                     negative_songs=[],
+    #                                     positive_artists=[],
+    #                                     negative_artists=[],
+    #                                     artist_weight=1.0, topn=20)
+    # for i in res:
+    #     print i[0], i[1]
+    s2vo.cluster_in_playlist('3659853')
