@@ -15,7 +15,7 @@ Created by jayvee on 16/12/14.
 主要用于不加处理地调用云音乐的API,返回数据均为remote端原始数据
 """
 
-config_infos = get_config()
+# config_infos = get_config()
 # csrf_token = config_infos['csrf_token']
 
 header = {
