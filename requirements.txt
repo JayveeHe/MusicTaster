@@ -2,3 +2,4 @@ requests
 pyopenssl
 pycrypto
 gensim
+sklearn
