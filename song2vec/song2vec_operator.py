@@ -13,6 +13,7 @@ from numpy.core.multiarray import ndarray, array, dot
 from sklearn.cluster import AffinityPropagation
 
 from utils.cloudmusic_api import playlist_detail
+from utils.logger_utils import data_process_logger
 
 
 class Song2VecOperator:
@@ -62,24 +63,26 @@ class Song2VecOperator:
             positive_artists = [(word, artist_weight) for word in positive_artists]
             negative_artists = [(word, -artist_weight) for word in negative_artists]
             all_words, mean = set(), []
-            for song, weight in positive_songs + negative_songs:
-                if isinstance(song, ndarray):
-                    mean.append(weight * song)
-                elif song in self.song2vec_model.vocab:
-                    mean.append(weight * self.song2vec_model.syn0norm[self.song2vec_model.vocab[song].index])
-                    all_words.add(self.song2vec_model.vocab[song].index)
-                else:
-                    raise KeyError("song '%s' not in vocabulary" % song)
+            if positive_songs + negative_songs:
+                for song, weight in positive_songs + negative_songs:
+                    if isinstance(song, ndarray):
+                        mean.append(weight * song)
+                    elif song in self.song2vec_model.vocab:
+                        mean.append(weight * self.song2vec_model.syn0norm[self.song2vec_model.vocab[song].index])
+                        all_words.add(self.song2vec_model.vocab[song].index)
+                    else:
+                        raise KeyError("song '%s' not in vocabulary" % song)
             # limited = self.song2vec_model.syn0norm if restrict_vocab is None \
             #     else self.song2vec_model.syn0norm[:restrict_vocab]
-            for artist, weight in positive_artists + negative_artists:
-                if isinstance(word, ndarray):
-                    mean.append(weight * artist)
-                elif word in self.artist2vec_model.vocab:
-                    mean.append(weight * self.artist2vec_model.syn0norm[self.artist2vec_model.vocab[artist].index])
-                    all_words.add(self.artist2vec_model.vocab[artist].index)
-                else:
-                    raise KeyError("artist '%s' not in vocabulary" % artist)
+            if positive_artists + negative_artists:
+                for artist, weight in positive_artists + negative_artists:
+                    if isinstance(word, ndarray):
+                        mean.append(weight * artist)
+                    elif word in self.artist2vec_model.vocab:
+                        mean.append(weight * self.artist2vec_model.syn0norm[self.artist2vec_model.vocab[artist].index])
+                        all_words.add(self.artist2vec_model.vocab[artist].index)
+                    else:
+                        raise KeyError("artist '%s' not in vocabulary" % artist)
             if not mean:
                 raise ValueError("cannot compute similarity with no input")
             mean = matutils.unitvec(array(mean).mean(axis=0)).astype(REAL)
@@ -111,16 +114,17 @@ class Song2VecOperator:
         song_list = []
         vec_list = []
         ap_cluster = AffinityPropagation()
+        data_process_logger.info('clustering playlist: %s' % playlist_obj['name'])
         for item in playlist_obj['tracks']:
             song = item['name'].lower()
-            print song
+            # print song
             song_list.append(song)
             # print self.song2vec_model.vocab.get(song)
             # print self.song2vec_model.syn0norm == None
-            if self.song2vec_model.vocab.get(song) and self.song2vec_model.syn0norm != None:
+            if self.song2vec_model.vocab.get(song) and len(self.song2vec_model.syn0norm):
                 song_vec = self.song2vec_model.syn0norm[self.song2vec_model.vocab[song].index]
             else:
-                print '%s not in dataset' % song
+                data_process_logger.warn('The song %s of playlist-%snot in dataset' % (song, playlist_obj['name']))
                 song_vec = [0 for i in range(self.song2vec_model.vector_size)]
             vec_list.append(song_vec)
         cluster_result = ap_cluster.fit(vec_list, song_list)

@@ -44,7 +44,7 @@ def query_similar_songs(song_name=None):
     try:
         if request.method == 'GET':
             top_n = int(request.args.get('top_n')) if request.args.get('top_n') else 10
-            sim_res = s2v_operator.song2vec_model.most_similar(song_name, topn=top_n)
+            sim_res = s2v_operator.song2vec_model.most_similar(song_name.lower(), topn=top_n)
         elif request.method == 'POST':
             req_data_obj = json.loads(request.data)
             # 获取各组加减信息,并取小写字母(英文)
@@ -69,7 +69,7 @@ def query_similar_songs(song_name=None):
         result = {'code': 200, 'result': parsed_sim_res}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
-        res = {'code': 400, 'error_msg': e}
+        res = {'code': 400, 'error_msg': e.message}
         resp = make_response(json.dumps(res, ensure_ascii=False), 400)
     return resp
 
@@ -85,7 +85,7 @@ def cluster_playlist_by_plid(plid=None):
         result = {'code': 200, 'result': cluster_res}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
-        res = {'code': 400, 'error_msg': e}
+        res = {'code': 400, 'error_msg': e.message}
         resp = make_response(json.dumps(res, ensure_ascii=False), 400)
     return resp
 
@@ -103,13 +103,13 @@ def cluster_playlist_by_url():
         result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
-        res = {'code': 400, 'error_msg': e}
+        res = {'code': 400, 'error_msg': e.message}
         resp = make_response(json.dumps(res, ensure_ascii=False), 400)
     return resp
 
 
 def lower_array(arr):
-    return [a.lower() for a in arr if isinstance(a, string)]
+    return [a.lower() for a in arr]
 
 
 if __name__ == '__main__':
