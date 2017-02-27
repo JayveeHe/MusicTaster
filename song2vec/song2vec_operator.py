@@ -157,12 +157,13 @@ class Song2VecOperator:
                 return dists
             best = matutils.argsort(dists, topn=topn + len(all_words), reverse=True)
             # ignore (don't return) words from the input
-            result = [(self.artist2vec_model.index2word[sim], float(dists[sim])) for sim in best if sim not in all_words]
+            result = [(self.artist2vec_model.index2word[sim], float(dists[sim])) for sim in best if
+                      sim not in all_words]
             return result[:topn]
         except Exception, e:
             print 'error = %s' % e
 
-    def cluster_in_playlist(self, playlist_id, cluster_n=5):
+    def cluster_song_in_playlist(self, playlist_id, cluster_n=5):
         """
         获取单个歌单内的歌曲聚类信息
         Args:
@@ -180,21 +181,62 @@ class Song2VecOperator:
         for item in playlist_obj['tracks']:
             song = item['name'].lower()
             # print song
-            song_list.append(song)
-            # print self.song2vec_model.vocab.get(song)
-            # print self.song2vec_model.syn0norm == None
-            if self.song2vec_model.vocab.get(song) and len(self.song2vec_model.syn0norm):
-                song_vec = self.song2vec_model.syn0norm[self.song2vec_model.vocab[song].index]
-            else:
-                data_process_logger.warn('The song %s of playlist-%snot in dataset' % (song, playlist_obj['name']))
-                song_vec = [0 for i in range(self.song2vec_model.vector_size)]
-            vec_list.append(song_vec)
+            if song not in song_list:
+                song_list.append(song)
+                # print self.song2vec_model.vocab.get(song)
+                # print self.song2vec_model.syn0norm == None
+                if self.song2vec_model.vocab.get(song) and len(self.song2vec_model.syn0norm):
+                    song_vec = self.song2vec_model.syn0norm[self.song2vec_model.vocab[song].index]
+                else:
+                    data_process_logger.warn('The song %s of playlist-%s is not in dataset' % (song, playlist_obj['name']))
+                    song_vec = [0 for i in range(self.song2vec_model.vector_size)]
+                vec_list.append(song_vec)
+        song_list = list(song_list)
         cluster_result = ap_cluster.fit(vec_list, song_list)
         cluster_array = [[] for i in range(len(cluster_result.cluster_centers_indices_))]
         for i in range(len(cluster_result.labels_)):
             label = cluster_result.labels_[i]
             index = i
             cluster_array[label].append(song_list[i])
+        return cluster_array, playlist_obj['name']
+
+    def cluster_artist_in_playlist(self, playlist_id, cluster_n=5):
+        """
+        获取单个歌单内的歌手聚类信息
+        Args:
+            playlist_id: 歌单id
+            cluster_n:聚类数
+
+        Returns:
+            聚类后的列表
+        """
+        playlist_obj = playlist_detail(playlist_id)
+        artist_list = []
+        vec_list = []
+        ap_cluster = AffinityPropagation()
+        data_process_logger.info('clustering playlist: %s' % playlist_obj['name'])
+        for item in playlist_obj['tracks']:
+            artist = item['artists'][0]['name'].lower()
+            # print artist
+            if artist not in artist_list:
+                artist_list.append(artist)
+                # print self.song2vec_model.vocab.get(artist)
+                # print self.song2vec_model.syn0norm == None
+                if self.artist2vec_model.vocab.get(artist) and len(self.artist2vec_model.syn0norm):
+                    artist_vec = self.artist2vec_model.syn0norm[self.artist2vec_model.vocab[artist].index]
+                else:
+                    data_process_logger.warn(
+                        'The artist %s of playlist-%s is not in dataset' % (artist, playlist_obj['name']))
+                    artist_vec = [0 for i in range(self.artist2vec_model.vector_size)]
+                vec_list.append(artist_vec)
+        # artist_list = list(artist_list)
+        # vec_list = list(vec_list)
+        cluster_result = ap_cluster.fit(vec_list, artist_list)
+        cluster_array = [[] for i in range(len(cluster_result.cluster_centers_indices_))]
+        for i in range(len(cluster_result.labels_)):
+            label = cluster_result.labels_[i]
+            index = i
+            cluster_array[label].append(artist_list[i])
         return cluster_array, playlist_obj['name']
 
 
@@ -208,4 +250,5 @@ if __name__ == '__main__':
     #                                     artist_weight=1.0, topn=20)
     # for i in res:
     #     print i[0], i[1]
-    s2vo.cluster_in_playlist('3659853')
+    # s2vo.cluster_song_in_playlist('3659853')
+    s2vo.cluster_artist_in_playlist('3659853')

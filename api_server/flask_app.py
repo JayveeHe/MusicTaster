@@ -125,7 +125,14 @@ def cluster_playlist_by_plid(plid=None):
             cluster_n = eval(request.args.get('cluster_n'))
         else:
             cluster_n = 5
-        cluster_res = s2v_operator.cluster_in_playlist(plid, cluster_n=cluster_n)
+        if request.args.get('type'):
+            cluster_type = request.args.get('type')
+        else:
+            cluster_type = 'song'
+        if cluster_type == 'artist':
+            cluster_res, playlist_name = s2v_operator.cluster_artist_in_playlist(plid, cluster_n=cluster_n)
+        else:
+            cluster_res, playlist_name = s2v_operator.cluster_song_in_playlist(plid, cluster_n=cluster_n)
         result = {'code': 200, 'result': cluster_res}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
@@ -137,13 +144,18 @@ def cluster_playlist_by_plid(plid=None):
 @app.route('/cluster/playlist/url', methods=['POST'])
 def cluster_playlist_by_url():
     try:
-        url = json.loads(request.data)['url']
+        req_obj = json.loads(request.data)
+        url = req_obj['url']
+        cluster_type = req_obj['type']
         plid = re.findall('\d{4,}', url)[0]
         if request.args.get('cluster_n'):
             cluster_n = eval(request.args.get('cluster_n'))
         else:
             cluster_n = 5
-        cluster_res, playlist_name = s2v_operator.cluster_in_playlist(plid, cluster_n=cluster_n)
+        if cluster_type == 'artist':
+            cluster_res, playlist_name = s2v_operator.cluster_artist_in_playlist(plid, cluster_n=cluster_n)
+        else:
+            cluster_res, playlist_name = s2v_operator.cluster_song_in_playlist(plid, cluster_n=cluster_n)
         result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
