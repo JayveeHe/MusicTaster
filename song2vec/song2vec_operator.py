@@ -38,10 +38,10 @@ class Song2VecOperator:
         except IOError, ioe:
             print '%s' % ioe
 
-    def calc_song_artist_similar(self, positive_songs=[], negative_songs=[],
-                                 positive_artists=[], negative_artists=[],
-                                 song_weight=1.0, artist_weight=1.5,
-                                 topn=10, restrict_vocab=None):
+    def calc_song_similar(self, positive_songs=[], negative_songs=[],
+                          positive_artists=[], negative_artists=[],
+                          song_weight=1.0, artist_weight=1.5,
+                          topn=10, restrict_vocab=None):
         """
         计算歌曲和歌手的加减相似度,求出最近似的歌曲top n
         Args:
@@ -96,6 +96,68 @@ class Song2VecOperator:
             best = matutils.argsort(dists, topn=topn + len(all_words), reverse=True)
             # ignore (don't return) words from the input
             result = [(self.song2vec_model.index2word[sim], float(dists[sim])) for sim in best if sim not in all_words]
+            return result[:topn]
+        except Exception, e:
+            print 'error = %s' % e
+
+    def calc_artist_similar(self, positive_songs=[], negative_songs=[],
+                            positive_artists=[], negative_artists=[],
+                            song_weight=1.0, artist_weight=1.5,
+                            topn=10, restrict_vocab=None):
+        """
+        计算歌曲和歌手的加减相似度,求出最近似的歌手top n
+        Args:
+            topn:
+            restrict_vocab:
+            artist_weight:
+            song_weight:
+            positive_songs:
+            negative_songs:
+            positive_artists:
+            negative_artists:
+
+        Returns:
+
+        """
+        try:
+            positive_songs = [(word, song_weight) for word in positive_songs]
+            negative_songs = [(word, -song_weight) for word in negative_songs]
+            positive_artists = [(word, artist_weight) for word in positive_artists]
+            negative_artists = [(word, -artist_weight) for word in negative_artists]
+            all_words, mean = set(), []
+            if positive_songs + negative_songs:
+                for song, weight in positive_songs + negative_songs:
+                    if isinstance(song, ndarray):
+                        mean.append(weight * song)
+                    elif song in self.song2vec_model.vocab:
+                        mean.append(weight * self.song2vec_model.syn0norm[self.song2vec_model.vocab[song].index])
+                        all_words.add(self.song2vec_model.vocab[song].index)
+                    else:
+                        raise KeyError("song '%s' not in vocabulary" % song)
+            # limited = self.song2vec_model.syn0norm if restrict_vocab is None \
+            #     else self.song2vec_model.syn0norm[:restrict_vocab]
+            if positive_artists + negative_artists:
+                for artist, weight in positive_artists + negative_artists:
+                    if isinstance(word, ndarray):
+                        mean.append(weight * artist)
+                    elif word in self.artist2vec_model.vocab:
+                        mean.append(weight * self.artist2vec_model.syn0norm[self.artist2vec_model.vocab[artist].index])
+                        all_words.add(self.artist2vec_model.vocab[artist].index)
+                    else:
+                        raise KeyError("artist '%s' not in vocabulary" % artist)
+            if not mean:
+                raise ValueError("cannot compute similarity with no input")
+            mean = matutils.unitvec(array(mean).mean(axis=0)).astype(REAL)
+            limited = self.artist2vec_model.syn0norm if restrict_vocab is None \
+                else self.artist2vec_model.syn0norm[:restrict_vocab]
+            # limited += self.artist2vec_model.syn0norm if restrict_vocab is None \
+            #     else self.artist2vec_model.syn0norm[:restrict_vocab]
+            dists = dot(limited, mean)
+            if not topn:
+                return dists
+            best = matutils.argsort(dists, topn=topn + len(all_words), reverse=True)
+            # ignore (don't return) words from the input
+            result = [(self.artist2vec_model.index2word[sim], float(dists[sim])) for sim in best if sim not in all_words]
             return result[:topn]
         except Exception, e:
             print 'error = %s' % e

@@ -41,6 +41,14 @@ def hello_world():
 @app.route('/similar/song', methods=['POST'])
 @app.route('/similar/song/<song_name>', methods=['GET'])
 def query_similar_songs(song_name=None):
+    """
+    查询最近似的歌曲,方法可以为GET或POST
+    Args:
+        song_name:
+
+    Returns:
+
+    """
     try:
         if request.method == 'GET':
             top_n = int(request.args.get('top_n')) if request.args.get('top_n') else 10
@@ -57,11 +65,47 @@ def query_similar_songs(song_name=None):
             negative_artists = lower_array(req_data_obj.get('negative_artists')) if req_data_obj.get(
                 'negative_artists') else []
             top_n = req_data_obj.get('top_n') if req_data_obj.get('top_n') else 10
-            sim_res = s2v_operator.calc_song_artist_similar(positive_songs=positive_songs,
-                                                            negative_songs=negative_songs,
-                                                            positive_artists=positive_artists,
-                                                            negative_artists=negative_artists,
-                                                            topn=top_n)
+            sim_res = s2v_operator.calc_song_similar(positive_songs=positive_songs,
+                                                     negative_songs=negative_songs,
+                                                     positive_artists=positive_artists,
+                                                     negative_artists=negative_artists,
+                                                     topn=top_n)
+        else:
+            sim_res = []
+        # parse similar result
+        parsed_sim_res = [{'name': a[0], 'similarity': a[1]} for a in sim_res]
+        result = {'code': 200, 'result': parsed_sim_res}
+        resp = make_response(json.dumps(result, ensure_ascii=False), 200)
+    except Exception, e:
+        res = {'code': 400, 'error_msg': e.message}
+        resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+    return resp
+
+
+@app.route('/similar/artist', methods=['POST'])
+@app.route('/similar/artist/<artist_name>', methods=['GET'])
+def query_similar_artist(artist_name=None):
+    try:
+        if request.method == 'GET':
+            top_n = int(request.args.get('top_n')) if request.args.get('top_n') else 10
+            sim_res = s2v_operator.artist2vec_model.most_similar(artist_name.lower(), topn=top_n)
+        elif request.method == 'POST':
+            req_data_obj = json.loads(request.data)
+            # 获取各组加减信息,并取小写字母(英文)
+            positive_songs = lower_array(req_data_obj.get('positive_songs')) if req_data_obj.get(
+                'positive_songs') else []
+            negative_songs = lower_array(req_data_obj.get('negative_songs')) if req_data_obj.get(
+                'negative_songs') else []
+            positive_artists = lower_array(req_data_obj.get('positive_artists')) if req_data_obj.get(
+                'positive_artists') else []
+            negative_artists = lower_array(req_data_obj.get('negative_artists')) if req_data_obj.get(
+                'negative_artists') else []
+            top_n = req_data_obj.get('top_n') if req_data_obj.get('top_n') else 10
+            sim_res = s2v_operator.calc_artist_similar(positive_songs=positive_songs,
+                                                       negative_songs=negative_songs,
+                                                       positive_artists=positive_artists,
+                                                       negative_artists=negative_artists,
+                                                       topn=top_n)
         else:
             sim_res = []
         # parse similar result
