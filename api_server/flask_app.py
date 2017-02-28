@@ -5,7 +5,6 @@ Created by jayvee on 17/2/19.
 https://github.com/JayveeHe
 """
 import json
-import string
 
 import re
 from flask import Flask, render_template, request, make_response
@@ -75,10 +74,11 @@ def query_similar_songs(song_name=None):
         # parse similar result
         parsed_sim_res = [{'name': a[0], 'similarity': a[1]} for a in sim_res]
         result = {'code': 200, 'result': parsed_sim_res}
-        resp = make_response(json.dumps(result, ensure_ascii=False), 200)
+        resp = make_response(json.dumps(result, ensure_ascii=False), 200, 'application/json')
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
         resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+    resp.mimetype = 'application/json'
     return resp
 
 
@@ -115,6 +115,7 @@ def query_similar_artist(artist_name=None):
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
         resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+    resp.mimetype = 'application/json'
     return resp
 
 
@@ -135,9 +136,11 @@ def cluster_playlist_by_plid(plid=None):
             cluster_res, playlist_name = s2v_operator.cluster_song_in_playlist(plid, cluster_n=cluster_n)
         result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
+        resp.mimetype = 'application/json'
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
         resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+        resp.mimetype = 'application/json'
     return resp
 
 
@@ -158,9 +161,11 @@ def cluster_playlist_by_url():
             cluster_res, playlist_name = s2v_operator.cluster_song_in_playlist(plid, cluster_n=cluster_n)
         result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
+        resp.mimetype = 'application/json'
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
         resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+        resp.mimetype = 'application/json'
     return resp
 
 
