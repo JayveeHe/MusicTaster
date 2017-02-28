@@ -134,7 +134,7 @@ def cluster_playlist_by_plid(plid=None):
             cluster_res, playlist_name = s2v_operator.cluster_artist_in_playlist(plid, cluster_n=cluster_n)
         else:
             cluster_res, playlist_name = s2v_operator.cluster_song_in_playlist(plid, cluster_n=cluster_n)
-        result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name}
+        result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name, 'type': cluster_type}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
         resp.mimetype = 'application/json'
     except Exception, e:
@@ -159,7 +159,7 @@ def cluster_playlist_by_url():
             cluster_res, playlist_name = s2v_operator.cluster_artist_in_playlist(plid, cluster_n=cluster_n)
         else:
             cluster_res, playlist_name = s2v_operator.cluster_song_in_playlist(plid, cluster_n=cluster_n)
-        result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name}
+        result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name, 'type': cluster_type}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
         resp.mimetype = 'application/json'
     except Exception, e:
