@@ -188,17 +188,21 @@ class Song2VecOperator:
                 if self.song2vec_model.vocab.get(song) and len(self.song2vec_model.syn0norm):
                     song_vec = self.song2vec_model.syn0norm[self.song2vec_model.vocab[song].index]
                 else:
-                    data_process_logger.warn('The song %s of playlist-%s is not in dataset' % (song, playlist_obj['name']))
+                    data_process_logger.warn(
+                        'The song %s of playlist-%s is not in dataset' % (song, playlist_obj['name']))
                     song_vec = [0 for i in range(self.song2vec_model.vector_size)]
                 vec_list.append(song_vec)
-        song_list = list(song_list)
-        cluster_result = ap_cluster.fit(vec_list, song_list)
-        cluster_array = [[] for i in range(len(cluster_result.cluster_centers_indices_))]
-        for i in range(len(cluster_result.labels_)):
-            label = cluster_result.labels_[i]
-            index = i
-            cluster_array[label].append(song_list[i])
-        return cluster_array, playlist_obj['name']
+        # song_list = list(song_list)
+        if len(vec_list) > 1:
+            cluster_result = ap_cluster.fit(vec_list, song_list)
+            cluster_array = [[] for i in range(len(cluster_result.cluster_centers_indices_))]
+            for i in range(len(cluster_result.labels_)):
+                label = cluster_result.labels_[i]
+                index = i
+                cluster_array[label].append(song_list[i])
+            return cluster_array, playlist_obj['name']
+        else:
+            return [song_list], playlist_obj['name']
 
     def cluster_artist_in_playlist(self, playlist_id, cluster_n=5):
         """
@@ -231,13 +235,16 @@ class Song2VecOperator:
                 vec_list.append(artist_vec)
         # artist_list = list(artist_list)
         # vec_list = list(vec_list)
-        cluster_result = ap_cluster.fit(vec_list, artist_list)
-        cluster_array = [[] for i in range(len(cluster_result.cluster_centers_indices_))]
-        for i in range(len(cluster_result.labels_)):
-            label = cluster_result.labels_[i]
-            index = i
-            cluster_array[label].append(artist_list[i])
-        return cluster_array, playlist_obj['name']
+        if len(vec_list) > 1:
+            cluster_result = ap_cluster.fit(vec_list, artist_list)
+            cluster_array = [[] for i in range(len(cluster_result.cluster_centers_indices_))]
+            for i in range(len(cluster_result.labels_)):
+                label = cluster_result.labels_[i]
+                index = i
+                cluster_array[label].append(artist_list[i])
+            return cluster_array, playlist_obj['name']
+        else:
+            return [artist_list], playlist_obj['name']
 
 
 if __name__ == '__main__':
