@@ -74,7 +74,7 @@ def query_similar_songs(song_name=None):
         # parse similar result
         parsed_sim_res = [{'name': a[0], 'similarity': a[1]} for a in sim_res]
         result = {'code': 200, 'result': parsed_sim_res}
-        resp = make_response(json.dumps(result, ensure_ascii=False), 200, 'application/json')
+        resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
         resp = make_response(json.dumps(res, ensure_ascii=False), 400)
