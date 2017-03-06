@@ -167,14 +167,30 @@
                                     dragListener.bind('dragend', function (event) {
                                         console.log(event);
                                     });
-
-                                    sig.startForceAtlas2({
+                                    var settings_config = {
                                         worker: true, barnesHutOptimize: false,
                                         adjustSizes: false,
-                                        scalingRatio: 5,
-                                        gravity: 3
-                                    });
-                                    {#                                    setTimeout(sig.stopForceAtlas2(), 5000);#}
+                                        outboundAttractionDistribution: true,
+                                        scalingRatio: 2,
+                                        gravity: 5,
+                                        slowDown: 5
+
+                                    };
+
+
+                                    var st = function () {
+                                        sig.stopForceAtlas2();
+                                        console.log('stop');
+                                    };
+
+                                    function sta() {
+                                        sig.startForceAtlas2(settings_config);
+{#                                        setTimeout(st, 10000);#}
+                                    }
+
+                                    sta();
+
+                                    {#                                    setTimeout(st,5000);#}
                                 } else {
                                     alert("请求错误,详情=" + resp_obj.toString());
                                 }
