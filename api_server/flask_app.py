@@ -10,7 +10,6 @@ import re
 from flask import Flask, render_template, request, make_response
 
 import os
-
 import sys
 
 abs_path = os.path.dirname(os.path.abspath(__file__))
@@ -18,9 +17,10 @@ abs_father_path = os.path.dirname(abs_path)
 PROJECT_PATH = abs_father_path
 print 'Used file: %s\nProject path=%s' % (__file__, PROJECT_PATH)
 sys.path.append(PROJECT_PATH)
+# add flask path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from song2vec.song2vec_operator import Song2VecOperator
-
 from utils.logger_utils import data_process_logger
 
 app = Flask(__name__)
@@ -34,7 +34,7 @@ data_process_logger.info('complete init song2vec')
 
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    return render_template("demo.html")
 
 
 @app.route('/similar/song', methods=['POST'])
@@ -147,7 +147,10 @@ def cluster_playlist_by_plid(plid=None):
 @app.route('/cluster/playlist/url', methods=['POST'])
 def cluster_playlist_by_url():
     try:
-        req_obj = json.loads(request.data)
+        if len(request.data):
+            req_obj = json.loads(request.data)
+        else:
+            req_obj = request.form
         url = req_obj['url']
         cluster_type = req_obj['type']
         plid = re.findall('\d{4,}', url)[0]
