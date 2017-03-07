@@ -23,6 +23,12 @@
 1. 如果进行数据爬取,则需要一个MongoDB实例进行数据管理
 2. 安装`requirements.txt`下的依赖包
 
+## Demo
+歌单聚类:
+http://180.76.179.18:2335
+
+
+
 ## Demo API Doc
 [https://github.com/JayveeHe/MusicTaster/wiki/Music-Taster-Demo-API-Doc](https://github.com/JayveeHe/MusicTaster/wiki/Music-Taster-Demo-API-Doc)
 
