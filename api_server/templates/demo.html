@@ -6,14 +6,30 @@
     <link href="http://cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
     <!--<link href="http://cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" rel="stylesheet">-->
     <script src="http://cdn.bootcss.com/jquery/2.2.3/jquery.min.js"></script>
-    <script src="//cdn.bootcss.com/sigma.js/1.2.0/sigma.min.js"></script>
-    <script src="//cdn.bootcss.com/sigma.js/1.2.0/plugins/sigma.parsers.json.min.js"></script>
-    <script src="//cdn.bootcss.com/sigma.js/1.2.0/plugins/sigma.layout.forceAtlas2.min.js"></script>
-    <script src="//cdn.bootcss.com/sigma.js/1.2.0/plugins/sigma.plugins.dragNodes.min.js"></script>
-    <link href="http://cdn.bootcss.com/flat-ui/2.3.0/css/flat-ui.min.css" rel="stylesheet">
+    {#    <script src="//cdn.bootcss.com/sigma.js/1.2.0/sigma.min.js"></script>#}
+    {#    <script src="//cdn.bootcss.com/sigma.js/1.2.0/plugins/sigma.parsers.json.min.js"></script>#}
+    {#    <script src="//cdn.bootcss.com/sigma.js/1.2.0/plugins/sigma.layout.forceAtlas2.min.js"></script>#}
+    {#    <script src="//cdn.bootcss.com/sigma.js/1.2.0/plugins/sigma.plugins.dragNodes.min.js"></script>#}
+    {#    <link href="http://cdn.bootcss.com/flat-ui/2.3.0/css/flat-ui.min.css" rel="stylesheet">#}
     {#    <link rel="icon" href="/static/favicon.ico" type="image/x-icon"/>#}
     <link href="//cdn.bootcss.com/flat-ui/2.3.0/css/flat-ui.min.css" rel="stylesheet">
     <script src="//cdn.bootcss.com/flat-ui/2.3.0/js/flat-ui.min.js"></script>
+    <script src="//cdn.bootcss.com/d3/4.7.1/d3.min.js"></script>
+
+    <style>
+
+        .links line {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+
+    </style>
+
 </head>
 <body>
 <div class="container" id="main">
@@ -53,6 +69,8 @@
                           class="form-control has-success"></textarea>
                 <button class="btn btn-info" id="btn_send" style="margin-top: 5%; width: 100%;">确认</button>
                 <script>
+
+
                     var sig = null;
                     $("#btn_send").click(function () {
                         var pl_url = $("#input_url").val();
@@ -66,140 +84,206 @@
                             'processData': false,
                             'contentType': 'application/json' //typically 'application/x-www-form-urlencoded', but the service you are calling may expect 'text/json'... check with the service to see what they expect as content-type in the HTTP header.
                         }).done(function (data, status) {
-                            $("#show_cluster").modal('toggle');
-                            if (status == "success") {
-                                // parse cluster result
-                                //解析聚类结果
-                                var resp_obj = eval(data);
-                                if (resp_obj['code'] == 200) {
-                                    var g = {"nodes": [], "edges": []};
-                                    var cluster_result = resp_obj["result"];
-                                    g.nodes.push({"id": 'root', 'label': '', 'x': 0, 'y': 0});
-                                    for (var i = 0; i < cluster_result.length; i++) {
-                                        console.log(cluster_result[i]);
-                                        var item = cluster_result[i][0];
-                                        var c_color = '#' + (Math.floor(Math.random() * 16777215).toString(16) + '000000').substr(0, 6);
-                                        var c_x = (Math.random() - 0.5) * 50;
-                                        var c_y = (Math.random() - 0.5) * 50;
-                                        g.nodes.push({
-                                            "id": item,
-                                            "label": item,
-                                            'x': c_x,
-                                            'y': c_y,
-                                            'color': c_color,
-                                            'size': 1
-                                        });
-                                        g.edges.push({
-                                            'id': 'root-' + item,
-                                            'source': 'root',
-                                            'target': item
-                                        });
-                                        var c_root_id = item;
-                                        var last_item = c_root_id;
-                                        for (var j = 1; j < cluster_result[i].length; j++) {
-                                            //console.log(i + "-" + j);
-                                            var n_item = cluster_result[i][j];
-                                            g.nodes.push({
-                                                "id": n_item,
-                                                "label": n_item,
-                                                'x': c_x + (Math.random() - 0.5) * 5,
-                                                'y': c_y + (Math.random() - 0.5) * 5,
-                                                'color': c_color,
-                                                'size': 0.5
-                                            });
-                                            g.edges.push({
-                                                'id': c_root_id + '-' + n_item,
-                                                'source': c_root_id,
-                                                'target': n_item,
-                                                'color': c_color
-                                            });
-                                            if (last_item != c_root_id) {
-                                                g.edges.push({
-                                                    'id': last_item + '-' + n_item,
-                                                    'source': last_item,
-                                                    'target': n_item,
-                                                    'color': c_color
+                                    $("#show_cluster").modal('toggle');
+                                    if (status == "success") {
+                                        // parse cluster result
+                                        //解析聚类结果
+                                        var resp_obj = eval(data);
+                                        if (resp_obj['code'] == 200) {
+                                            var title = $("#playlist_name_title");
+                                            title.val(resp_obj['name'] + "\t" + title.val());
+                                            /// -------- d3.js -------
+                                            //准备复杂网络数据
+                                            var g = {"nodes": [], "links": []};
+                                            var cluster_result = resp_obj["result"];
+                                            g.nodes.push({'id': 'root', 'group': -1, 'label': 'root'});
+                                            for (var i = 0; i < cluster_result.length; i++) {
+                                                console.log(cluster_result[i]);
+                                                var item = cluster_result[i][0];
+                                                var c_color = '#' + (Math.floor(Math.random() * 16777215).toString(16) + '000000').substr(0, 6);
+                                                var c_x = (Math.random() - 0.5) * 50;
+                                                var c_y = (Math.random() - 0.5) * 50;
+                                                g.nodes.push({
+                                                    "id": item,
+                                                    "group": i,
+                                                    'label': item
                                                 });
+                                                g.links.push({
+                                                    'source': 'root',
+                                                    'target': item,
+                                                    'value': 1
+                                                });
+                                                var c_root_id = item;
+                                                var last_item = c_root_id;
+                                                for (var j = 1; j < cluster_result[i].length; j++) {
+                                                    //console.log(i + "-" + j);
+                                                    var n_item = cluster_result[i][j];
+                                                    g.nodes.push({
+                                                        "id": n_item,
+                                                        "group": i,
+                                                        'label': n_item
+                                                    });
+                                                    g.links.push({
+                                                        'value': 1,
+                                                        'source': c_root_id,
+                                                        'target': n_item
+                                                    });
+                                                }
                                             }
-                                            last_item = n_item;
+                                            if (svg != null) {
+                                                svg.clear();
+                                            }
+
+                                            var svg = d3.select("svg");
+                                            {#                                                    width = +svg.attr("width"),#}
+                                            {#                                                    height = +svg.attr("height");#}
+                                            var c_canvas = $('#cluster_canvas');
+                                            width = 1000 * 0.9;
+                                            height = 600 * 0.9;
+                                            console.log(c_canvas);
+                                            console.log('width:' + width + '\theight:' + height);
+
+                                            var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+                                            var simulation = d3.forceSimulation()
+                                                    .force("link", d3.forceLink().id(function (d) {
+                                                        return d.id;
+                                                    }))
+                                                    .force("charge", d3.forceManyBody())
+                                                    .force("center", d3.forceCenter(width / 2, height / 2));
+
+
+                                            var link = svg.append("g")
+                                                    .attr("class", "links")
+                                                    .selectAll("line")
+                                                    .data(g.links)
+                                                    .enter().append("line")
+                                                    .attr("stroke-width", function (d) {
+                                                        return Math.sqrt(d.value);
+                                                    });
+
+                                            var node = svg.append("g")
+                                                    .attr("class", "nodes")
+                                                    .selectAll("circle")
+                                                    .data(g.nodes)
+                                                    .enter()
+                                                    {#                                                    .append('text').attr('class', 'labels').text(function (d) {#}
+                                                    {#                                                        console.log(d);#}
+                                                    {#                                                        return d.label;#}
+                                                    {#                                                    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 12)#}
+                                                    .append("circle")
+                                                    .attr("r", 5)
+                                                    .attr("fill", function (d) {
+                                                        return color(d.group);
+                                                    })
+                                                    {#                                                    .text(function (d) {#}
+                                                    {#                                                        console.log(d);#}
+                                                    {#                                                        return d.label;#}
+                                                    {#                                                    })#}
+                                                    .call(d3.drag()
+                                                            .on("start", dragstarted)
+                                                            .on("drag", dragged)
+                                                            .on("end", dragended));
+
+                                            var anchorNode = svg.append('g').attr('class', 'labels').selectAll("g.labels").data(g.nodes)
+                                                    .enter().append("svg:text").text(function (d) {
+                                                        console.log(d);
+                                                        return d.label;
+                                                    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 12)
+                                                    .call(d3.drag()
+                                                            .on("start", dragstarted)
+                                                            .on("drag", dragged)
+                                                            .on("end", dragended));
+                                            ;
+                                            //anchorNode.append("svg:circle").attr("r", 0).style("fill", "#FFF");
+
+
+                                            {#                                            node.append("title")#}
+                                            {#                                                    .text(function (d) {#}
+                                            {#                                                        return d.id;#}
+                                            {#                                                    });#}
+
+                                            simulation
+                                                    .nodes(g.nodes)
+                                                    .on("tick", ticked);
+
+                                            simulation.force("link")
+                                                    .links(g.links);
+                                            {#                                            var xScale = d3.transform().scale().linear()#}
+                                            {#                                                    .domain([0, width]).range([0, width]);#}
+                                            {#                                            var yScale = d3.transform().scale().linear()#}
+                                            {#                                                    .domain([0, height]).range([0, height]);#}
+                                            var zoomer = d3.zoom().scaleExtent([1 / 2, 4]).on("zoom", redraw);
+                                            svg.call(zoomer);
+                                            {#                                            var transform = d3.zoomTransform(g);#}
+
+                                            function redraw() {
+                                                console.log('zoom');
+                                                svg.attr("transform",
+                                                        d3.event.transform);
+                                            }
+
+                                            function ticked() {
+                                                link
+                                                        .attr("x1", function (d) {
+                                                            return d.source.x;
+                                                        })
+                                                        .attr("y1", function (d) {
+                                                            return d.source.y;
+                                                        })
+                                                        .attr("x2", function (d) {
+                                                            return d.target.x;
+                                                        })
+                                                        .attr("y2", function (d) {
+                                                            return d.target.y;
+                                                        });
+
+                                                node
+                                                        .attr("cx", function (d) {
+                                                            return d.x;
+                                                        })
+                                                        .attr("cy", function (d) {
+                                                            return d.y;
+                                                        });
+                                                anchorNode
+                                                        .attr("x", function (d) {
+                                                            return d.x;
+                                                        })
+                                                        .attr("y", function (d) {
+                                                            return d.y;
+                                                        });
+                                            }
+
+                                            function dragstarted(d) {
+                                                if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+                                                d.fx = d.x;
+                                                d.fy = d.y;
+                                            }
+
+                                            function dragged(d) {
+                                                d.fx = d3.event.x;
+                                                d.fy = d3.event.y;
+                                            }
+
+                                            function dragended(d) {
+                                                if (!d3.event.active) simulation.alphaTarget(0);
+                                                d.fx = null;
+                                                d.fy = null;
+                                            }
+
+
                                         }
+                                        else {
+                                            alert("请求错误,详情=" + resp_obj.toString());
+                                        }
+
+
                                     }
-                                    // sigma
-                                    sigma.renderers.def = sigma.renderers.canvas;
-                                    if (sig) {
-                                        sig.clear();
-                                        sig.kill();
-                                        $("#cluster_canvas").clear();
-                                        console.log('kill sig');
-                                        sig = new sigma({
-                                            graph: g,
-                                            container: 'cluster_canvas',
-                                            settings: {
-                                                defaultNodeColor: '#ec5148',
-                                                drawEdges: true,
-                                                drawLabels: true,
-                                                enableEdgeHovering: true
-                                            }
-                                        });
-                                    } else {
-                                        sig = new sigma({
-                                            graph: g,
-                                            container: 'cluster_canvas',
-                                            settings: {
-                                                defaultNodeColor: '#ec5148',
-                                                drawEdges: true,
-                                                drawLabels: true,
-                                                enableEdgeHovering: true
-                                            }
-                                        });
+                                    else {
+                                        alert("请求失败");
                                     }
-
-                                    var dragListener = new sigma.plugins.dragNodes(sig, sig.renderers[0]);
-                                    dragListener.bind('startdrag', function (event) {
-                                        console.log(event);
-                                    });
-                                    dragListener.bind('drag', function (event) {
-                                        console.log(event);
-                                    });
-                                    dragListener.bind('drop', function (event) {
-                                        console.log(event);
-                                    });
-                                    dragListener.bind('dragend', function (event) {
-                                        console.log(event);
-                                    });
-                                    var settings_config = {
-                                        worker: true, barnesHutOptimize: false,
-                                        adjustSizes: false,
-                                        outboundAttractionDistribution: true,
-                                        scalingRatio: 2,
-                                        gravity: 5,
-                                        slowDown: 5
-
-                                    };
-
-
-                                    var st = function () {
-                                        sig.stopForceAtlas2();
-                                        console.log('stop');
-                                    };
-
-                                    function sta() {
-                                        sig.startForceAtlas2(settings_config);
-                                        setTimeout(st, 20000);
-                                    }
-
-                                    sta();
-
-                                    {#                                    setTimeout(st,5000);#}
-                                } else {
-                                    alert("请求错误,详情=" + resp_obj.toString());
                                 }
-
-
-                            } else {
-                                alert("请求失败");
-                            }
-                        }).fail(function () {
+                        ).fail(function () {
                             alert("请求失败");
                         });
 
@@ -217,16 +301,16 @@
 
                     // Add a method to the graph model that returns an
                     // object with every neighbors of a node inside:
-                    sigma.classes.graph.addMethod('neighbors', function (nodeId) {
-                        var k,
-                                neighbors = {},
-                                index = this.allNeighborsIndex[nodeId] || {};
-
-                        for (k in index)
-                            neighbors[k] = this.nodesIndex[k];
-
-                        return neighbors;
-                    });
+                    {#                    sigma.classes.graph.addMethod('neighbors', function (nodeId) {#}
+                    {#                        var k,#}
+                    {#                                neighbors = {},#}
+                    {#                                index = this.allNeighborsIndex[nodeId] || {};#}
+                    {##}
+                    {#                        for (k in index)#}
+                    {#                            neighbors[k] = this.nodesIndex[k];#}
+                    {##}
+                    {#                        return neighbors;#}
+                    {#                    });#}
 
                 </script>
             </div>
@@ -245,25 +329,31 @@
     </div>
     <div class="modal fade" id="show_cluster" tabindex="-1" role="dialog"
          aria-hidden="true">
-        <div class="modal-dialog" style="width: 1000px;height:800px">
+        <div class="modal-dialog" style="width: 1000px;height:720px">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close"
                             data-dismiss="modal" aria-hidden="true">
                         &times;
                     </button>
-                    <h4 class="modal-title">
+                    <h4 class="modal-title" id="playlist_name_title">
                         歌曲聚类结果
                     </h4>
                 </div>
                 <div class="modal-body" id="modal_text" style="width: 1000px;height:600px">
-                    <div class="modal-body" id="cluster_canvas" style="width: 90%;height: 90%">
-                    </div>
+                    <svg class="modal-body" id="cluster_canvas" style="width: 90%;height: 90%">
+                    </svg>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default"
-                            data-dismiss="modal">关闭
+                            data-dismiss="modal" id="modal_dismiss">关闭
                     </button>
+                    <script>
+                        $("#modal_dismiss").click(function () {
+                            sig.kill();
+                            console.log('kill sig with dismiss');
+                        })
+                    </script>
                 </div>
             </div>
             <!-- /.modal-content -->
