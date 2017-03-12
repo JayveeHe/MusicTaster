@@ -130,11 +130,10 @@
                                                     });
                                                 }
                                             }
-                                            if (svg != null) {
-                                                svg.clear();
-                                            }
-
                                             var svg = d3.select("svg");
+
+                                            svg.selectAll('*').remove();
+                                            {#                                            svg.selectAll('*').remove();#}
                                             {#                                                    width = +svg.attr("width"),#}
                                             {#                                                    height = +svg.attr("height");#}
                                             var c_canvas = $('#cluster_canvas');
@@ -187,7 +186,7 @@
 
                                             var anchorNode = svg.append('g').attr('class', 'labels').selectAll("g.labels").data(g.nodes)
                                                     .enter().append("svg:text").text(function (d) {
-                                                        console.log(d);
+                                                        {#                                                        console.log(d);#}
                                                         return d.label;
                                                     }).style("fill", "#555").style("font-family", "Arial").style("font-size", 12)
                                                     .call(d3.drag()
@@ -350,8 +349,9 @@
                     </button>
                     <script>
                         $("#modal_dismiss").click(function () {
-                            sig.kill();
-                            console.log('kill sig with dismiss');
+{#                            sig.kill();#}
+                            d3.select("svg").selectAll('*').remove();
+                            console.log('kill with dismiss');
                         })
                     </script>
                 </div>
