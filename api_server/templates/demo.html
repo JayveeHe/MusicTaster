@@ -15,7 +15,7 @@
     <link href="//cdn.bootcss.com/flat-ui/2.3.0/css/flat-ui.min.css" rel="stylesheet">
     <script src="//cdn.bootcss.com/flat-ui/2.3.0/js/flat-ui.min.js"></script>
     <script src="//cdn.bootcss.com/d3/4.7.1/d3.min.js"></script>
-
+    {#    <script src="http://d3js.org/d3.v3.min.js"></script>#}
     <style>
 
         .links line {
@@ -188,7 +188,7 @@
                                                     .enter().append("svg:text").text(function (d) {
                                                         {#                                                        console.log(d);#}
                                                         return d.label;
-                                                    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 12)
+                                                    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 6)
                                                     .call(d3.drag()
                                                             .on("start", dragstarted)
                                                             .on("drag", dragged)
@@ -212,14 +212,32 @@
                                             {#                                                    .domain([0, width]).range([0, width]);#}
                                             {#                                            var yScale = d3.transform().scale().linear()#}
                                             {#                                                    .domain([0, height]).range([0, height]);#}
-                                            var zoomer = d3.zoom().scaleExtent([1 / 2, 4]).on("zoom", redraw);
-                                            svg.call(zoomer);
                                             {#                                            var transform = d3.zoomTransform(g);#}
+                                            {#                                            var xScale = d3.scale.linear()#}
+                                            {#                                                    .domain([0, width]).range([0, width]);#}
+                                            {#                                            var yScale = d3.scale.linear()#}
+                                            {#                                                    .domain([0, height]).range([0, height]);#}
+                                            var zoom = d3.zoom()
+                                                    .on("zoom", zoomed);
 
-                                            function redraw() {
-                                                console.log('zoom');
-                                                svg.attr("transform",
-                                                        d3.event.transform);
+                                            svg
+                                                    .on("wheel", wheeled)
+                                                    .call(zoom)
+                                                    .call(zoom.transform, d3.zoomIdentity
+                                                            .translate(width / 2, height / 2)
+                                                            .scale(0.5)
+                                                            .translate(-width / 2, -height / 2));
+                                            svg.call(zoom);
+
+                                            function wheeled() {
+                                                console.log(d3.event);
+                                            }
+
+                                            function zoomed() {
+{#                                                svg.attr("transform", d3.event.transform);#}
+                                                node.attr("transform", d3.event.transform);
+                                                link.attr("transform", d3.event.transform);
+                                                anchorNode.attr("transform", d3.event.transform);
                                             }
 
                                             function ticked() {
@@ -349,7 +367,7 @@
                     </button>
                     <script>
                         $("#modal_dismiss").click(function () {
-{#                            sig.kill();#}
+                            {#                            sig.kill();#}
                             d3.select("svg").selectAll('*').remove();
                             console.log('kill with dismiss');
                         })
