@@ -16,6 +16,7 @@
     <script src="//cdn.bootcss.com/flat-ui/2.3.0/js/flat-ui.min.js"></script>
     <script src="//cdn.bootcss.com/d3/4.7.1/d3.min.js"></script>
     {#    <script src="http://d3js.org/d3.v3.min.js"></script>#}
+
     <style>
 
         .links line {
@@ -40,7 +41,7 @@
             </h4>
 
             <p>
-                请输入网易云音乐的歌单详情页网址
+                A demo based on Song2Vec and Artist2Vec
             </p>
             <hr/>
         </div>
@@ -54,294 +55,92 @@
     {#            <input style="float: left;" type="number" id="sent_num" class="form-control has-success" value="5">#}
     {#        </div>#}
     {#        <div class="col-md-2">#}
-    {#            <button class="btn btn-info" id="btn_send" style="width: 80%;">确认</button>#}
+    {#            <button class="btn btn-info" id="btn_send" style="svg_width: 80%;">确认</button>#}
     {#        </div>#}
     {#        <div class="col-md-4"></div>#}
     {#    </div>#}
-    <div class="row" style="height: 80%;">
+    <div class="row" style="height: 100%;">
         <div class="col-md-1"></div>
         <div class="col-md-10" style="height: 100%;">
-            <div class="row" style="height: 80%;">
-                <p>
-                    歌单网址：
-                </p>
-                <textarea style="max-width: 100% ;width:100%;height: 100%;" id="input_url"
-                          class="form-control has-success"></textarea>
-                <button class="btn btn-info" id="btn_send" style="margin-top: 5%; width: 100%;">确认</button>
+            <div class="row" style="height: 60%;">
+                <h6>
+                    歌单聚类：
+                </h6>
+                <span>请输入网易云音乐的歌单地址</span>
+                <hr/>
+                <input style="max-width: 100% ;width:100%;height: 80%;" id="input_url"
+                       class="form-control has-success" value="http://music.163.com/#/playlist?id=3659853">
+                <button class="btn btn-info" id="btn_url_send" style="margin-top: 5%; width: 100%;">确认</button>
+
+            </div>
+
+        </div>
+        <div class="col-md-1"></div>
+    </div>
+    <div class="row">
+        <div class="col-md-12"></div>
+    </div>
+    <div class="row" style="width: 100%;margin-top: 20px">
+        <div class="col-md-1"></div>
+        <div class="col-md-10">
+            <h6>
+                歌曲风格:
+            </h6>
+            <span>找出与给定歌曲(可多个)的风格近似的其他歌曲</span>
+            <hr/>
+            <div class="tagsinput-primary">
+                <input name="tagsinput" class="tagsinput" id="input_name" data-role="tagsinput" value="贝加尔湖畔,虎口脱险"
+                       style="display: none;">
+                <button class="btn btn-info" id="btn_name_send" style="margin-top: 5%; width: 100%;">确认</button>
                 <script>
-
-
-                    var sig = null;
-                    $("#btn_send").click(function () {
-                        var pl_url = $("#input_url").val();
+                    $('#btn_name_send').click(function () {
+                        var input_names_str = $('#input_name');
+                        console.log(input_names_str.val());
+                        var song_names = input_names_str.val().split(',');
+                        console.log(song_names);
                         var send_datas = {
-                            url: pl_url,
-                            type: "song"
+                            "positive_songs": song_names,
+                            "negative_songs": [],
+                            "positive_artists": [],
+                            "negative_artists": [],
+                            "top_n": 15
                         };
-                        $.ajax('/cluster/playlist/url', {
+                        $.ajax('/similar/song', {
                             'data': JSON.stringify(send_datas), //{action:'x',params:['a','b','c']}
                             'type': 'POST',
                             'processData': false,
                             'contentType': 'application/json' //typically 'application/x-www-form-urlencoded', but the service you are calling may expect 'text/json'... check with the service to see what they expect as content-type in the HTTP header.
                         }).done(function (data, status) {
-                                    $("#show_cluster").modal('toggle');
                                     if (status == "success") {
-                                        // parse cluster result
-                                        //解析聚类结果
                                         var resp_obj = eval(data);
                                         if (resp_obj['code'] == 200) {
-                                            var title = $("#playlist_name_title");
-                                            title.val(resp_obj['name'] + "\t" + title.val());
-                                            /// -------- d3.js -------
-                                            //准备复杂网络数据
-                                            var g = {"nodes": [], "links": []};
-                                            var cluster_result = resp_obj["result"];
-                                            g.nodes.push({'id': 'root', 'group': -1, 'label': 'root'});
-                                            for (var i = 0; i < cluster_result.length; i++) {
-                                                console.log(cluster_result[i]);
-                                                var item = cluster_result[i][0];
-                                                var c_color = '#' + (Math.floor(Math.random() * 16777215).toString(16) + '000000').substr(0, 6);
-                                                var c_x = (Math.random() - 0.5) * 50;
-                                                var c_y = (Math.random() - 0.5) * 50;
-                                                g.nodes.push({
-                                                    "id": item,
-                                                    "group": i,
-                                                    'label': item
-                                                });
-                                                g.links.push({
-                                                    'source': 'root',
-                                                    'target': item,
-                                                    'value': 1
-                                                });
-                                                var c_root_id = item;
-                                                var last_item = c_root_id;
-                                                for (var j = 1; j < cluster_result[i].length; j++) {
-                                                    //console.log(i + "-" + j);
-                                                    var n_item = cluster_result[i][j];
-                                                    g.nodes.push({
-                                                        "id": n_item,
-                                                        "group": i,
-                                                        'label': n_item
-                                                    });
-                                                    g.links.push({
-                                                        'value': 1,
-                                                        'source': c_root_id,
-                                                        'target': n_item
-                                                    });
-                                                }
+                                            // parse cluster result
+                                            //解析聚类结果
+                                            $("#show_similar").modal('toggle');
+                                            var similar_result = $("#song_similar_text");
+                                            similar_result.empty();
+                                            similar_result.append("<tr><td>歌曲名</td><td>相似度</td></tr>");
+                                            for (var i = 0; i < resp_obj['result'].length; i++) {
+                                                console.log(resp_obj['result'][i]['name'] + '-' + resp_obj['result'][i]['similarity']);
+                                                similar_result.append('<tr><td>' + resp_obj['result'][i]['name'] + '</td><td>' + resp_obj['result'][i]['similarity'] + '</td></tr>');
                                             }
-                                            var svg = d3.select("svg");
-
-                                            svg.selectAll('*').remove();
-                                            {#                                            svg.selectAll('*').remove();#}
-                                            {#                                                    width = +svg.attr("width"),#}
-                                            {#                                                    height = +svg.attr("height");#}
-                                            var c_canvas = $('#cluster_canvas');
-                                            width = 1000 * 0.9;
-                                            height = 600 * 0.9;
-                                            console.log(c_canvas);
-                                            console.log('width:' + width + '\theight:' + height);
-
-                                            var color = d3.scaleOrdinal(d3.schemeCategory20);
-
-                                            var simulation = d3.forceSimulation()
-                                                    .force("link", d3.forceLink().id(function (d) {
-                                                        return d.id;
-                                                    }))
-                                                    .force("charge", d3.forceManyBody())
-                                                    .force("center", d3.forceCenter(width / 2, height / 2));
-
-
-                                            var link = svg.append("g")
-                                                    .attr("class", "links")
-                                                    .selectAll("line")
-                                                    .data(g.links)
-                                                    .enter().append("line")
-                                                    .attr("stroke-width", function (d) {
-                                                        return Math.sqrt(d.value);
-                                                    });
-
-                                            var node = svg.append("g")
-                                                    .attr("class", "nodes")
-                                                    .selectAll("circle")
-                                                    .data(g.nodes)
-                                                    .enter()
-                                                    {#                                                    .append('text').attr('class', 'labels').text(function (d) {#}
-                                                    {#                                                        console.log(d);#}
-                                                    {#                                                        return d.label;#}
-                                                    {#                                                    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 12)#}
-                                                    .append("circle")
-                                                    .attr("r", 5)
-                                                    .attr("fill", function (d) {
-                                                        return color(d.group);
-                                                    })
-                                                    {#                                                    .text(function (d) {#}
-                                                    {#                                                        console.log(d);#}
-                                                    {#                                                        return d.label;#}
-                                                    {#                                                    })#}
-                                                    .call(d3.drag()
-                                                            .on("start", dragstarted)
-                                                            .on("drag", dragged)
-                                                            .on("end", dragended));
-
-                                            var anchorNode = svg.append('g').attr('class', 'labels').selectAll("g.labels").data(g.nodes)
-                                                    .enter().append("svg:text").text(function (d) {
-                                                        {#                                                        console.log(d);#}
-                                                        return d.label;
-                                                    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 6)
-                                                    .call(d3.drag()
-                                                            .on("start", dragstarted)
-                                                            .on("drag", dragged)
-                                                            .on("end", dragended));
-                                            ;
-                                            //anchorNode.append("svg:circle").attr("r", 0).style("fill", "#FFF");
-
-
-                                            {#                                            node.append("title")#}
-                                            {#                                                    .text(function (d) {#}
-                                            {#                                                        return d.id;#}
-                                            {#                                                    });#}
-
-                                            simulation
-                                                    .nodes(g.nodes)
-                                                    .on("tick", ticked);
-
-                                            simulation.force("link")
-                                                    .links(g.links);
-                                            {#                                            var xScale = d3.transform().scale().linear()#}
-                                            {#                                                    .domain([0, width]).range([0, width]);#}
-                                            {#                                            var yScale = d3.transform().scale().linear()#}
-                                            {#                                                    .domain([0, height]).range([0, height]);#}
-                                            {#                                            var transform = d3.zoomTransform(g);#}
-                                            {#                                            var xScale = d3.scale.linear()#}
-                                            {#                                                    .domain([0, width]).range([0, width]);#}
-                                            {#                                            var yScale = d3.scale.linear()#}
-                                            {#                                                    .domain([0, height]).range([0, height]);#}
-                                            var zoom = d3.zoom()
-                                                    .on("zoom", zoomed);
-
-                                            svg
-                                                    .on("wheel", wheeled)
-                                                    .call(zoom)
-                                                    .call(zoom.transform, d3.zoomIdentity
-                                                            .translate(width / 2, height / 2)
-                                                            .scale(0.5)
-                                                            .translate(-width / 2, -height / 2));
-                                            svg.call(zoom);
-
-                                            function wheeled() {
-                                                console.log(d3.event);
-                                            }
-
-                                            function zoomed() {
-{#                                                svg.attr("transform", d3.event.transform);#}
-                                                node.attr("transform", d3.event.transform);
-                                                link.attr("transform", d3.event.transform);
-                                                anchorNode.attr("transform", d3.event.transform);
-                                            }
-
-                                            function ticked() {
-                                                link
-                                                        .attr("x1", function (d) {
-                                                            return d.source.x;
-                                                        })
-                                                        .attr("y1", function (d) {
-                                                            return d.source.y;
-                                                        })
-                                                        .attr("x2", function (d) {
-                                                            return d.target.x;
-                                                        })
-                                                        .attr("y2", function (d) {
-                                                            return d.target.y;
-                                                        });
-
-                                                node
-                                                        .attr("cx", function (d) {
-                                                            return d.x;
-                                                        })
-                                                        .attr("cy", function (d) {
-                                                            return d.y;
-                                                        });
-                                                anchorNode
-                                                        .attr("x", function (d) {
-                                                            return d.x;
-                                                        })
-                                                        .attr("y", function (d) {
-                                                            return d.y;
-                                                        });
-                                            }
-
-                                            function dragstarted(d) {
-                                                if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-                                                d.fx = d.x;
-                                                d.fy = d.y;
-                                            }
-
-                                            function dragged(d) {
-                                                d.fx = d3.event.x;
-                                                d.fy = d3.event.y;
-                                            }
-
-                                            function dragended(d) {
-                                                if (!d3.event.active) simulation.alphaTarget(0);
-                                                d.fx = null;
-                                                d.fy = null;
-                                            }
-
-
                                         }
                                         else {
-                                            alert("请求错误,详情=" + resp_obj.toString());
+                                            alert("请求错误,详情=" + resp_obj['error_msg']);
                                         }
-
-
                                     }
                                     else {
-                                        alert("请求失败");
+                                        alert("请求失败," + data.toString());
                                     }
                                 }
-                        ).fail(function () {
-                            alert("请求失败");
+                        ).fail(function (data) {
+                            alert("请求失败, 原因=" + data);
                         });
-
-                        {#                        $.post("/cluster/playlist/url", send_datas, function (resp_data) {#}
-                        {#                            var resp_obj = json(resp_data);#}
-                        {#                            //解析聚类结果#}
-                        {#                            var cluster_result = resp_obj["result"];#}
-                        {#                            for (var i = 0; i < cluster_result.length; i++) {#}
-                        {#                                console.log(cluster_result[i]);#}
-                        {#                            }#}
-                        {##}
-                        {#                        }, "application/json");#}
-                    });
-
-
-                    // Add a method to the graph model that returns an
-                    // object with every neighbors of a node inside:
-                    {#                    sigma.classes.graph.addMethod('neighbors', function (nodeId) {#}
-                    {#                        var k,#}
-                    {#                                neighbors = {},#}
-                    {#                                index = this.allNeighborsIndex[nodeId] || {};#}
-                    {##}
-                    {#                        for (k in index)#}
-                    {#                            neighbors[k] = this.nodesIndex[k];#}
-                    {##}
-                    {#                        return neighbors;#}
-                    {#                    });#}
+                    })
 
                 </script>
             </div>
-
         </div>
-        {#        <div class="col-md-5" style="height: 100%;">#}
-        {#            <div class="row" style="height: 80%;">#}
-        {#                <p>#}
-        {#                    摘要结果：#}
-        {#                </p>#}
-        {#                <textarea class="form-control" style="max-width: 100%; width:90%;height: 100%;"#}
-        {#                          id="output_text"></textarea>#}
-        {#            </div>#}
-        {#        </div>#}
         <div class="col-md-1"></div>
     </div>
     <div class="modal fade" id="show_cluster" tabindex="-1" role="dialog"
@@ -354,7 +153,7 @@
                         &times;
                     </button>
                     <h4 class="modal-title" id="playlist_name_title">
-                        歌曲聚类结果
+                        歌单聚类结果
                     </h4>
                 </div>
                 <div class="modal-body" id="modal_text" style="width: 1000px;height:600px">
@@ -366,11 +165,41 @@
                             data-dismiss="modal" id="modal_dismiss">关闭
                     </button>
                     <script>
-                        $("#modal_dismiss").click(function () {
-                            {#                            sig.kill();#}
+                        /**$("#modal_dismiss").click(function () {
                             d3.select("svg").selectAll('*').remove();
                             console.log('kill with dismiss');
-                        })
+                        })**/
+                    </script>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal -->
+    </div>
+    <div class="modal fade" id="show_similar" tabindex="-1" role="dialog"
+         aria-hidden="true">
+        <div class="modal-dialog" style="width: 1000px;height:720px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close"
+                            data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="playlist_name_title">
+                        歌曲相似性结果
+                    </h4>
+                </div>
+                <div class="modal-body" id="song_similar_text">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default"
+                            data-dismiss="modal" id="modal_dismiss">关闭
+                    </button>
+                    <script>
+                        /**$("#modal_dismiss").click(function () {
+                            d3.select("svg").selectAll('*').remove();
+                            console.log('kill with dismiss');
+                        })**/
                     </script>
                 </div>
             </div>
@@ -379,5 +208,218 @@
         <!-- /.modal -->
     </div>
 </div>
+<script>
+
+    // 歌单聚类
+    $("#btn_url_send").click(function () {
+        var pl_url = $("#input_url").val();
+        var send_datas = {
+            url: pl_url,
+            type: "song",
+            is_detailed: true
+        };
+        $.ajax('/cluster/playlist/url', {
+            'data': JSON.stringify(send_datas), //{action:'x',params:['a','b','c']}
+            'type': 'POST',
+            'processData': false,
+            'contentType': 'application/json' //typically 'application/x-www-form-urlencoded', but the service you are calling may expect 'text/json'... check with the service to see what they expect as content-type in the HTTP header.
+        }).done(function (data, status) {
+                    $("#show_cluster").modal('toggle');
+                    if (status == "success") {
+                        // parse cluster result
+                        //解析聚类结果
+                        var resp_obj = eval(data);
+                        if (resp_obj['code'] == 200) {
+                            var title = $("#playlist_name_title");
+                            console.log(resp_obj['playlist_name']);
+                            title.text(resp_obj['playlist_name'] + "\t-\t" + '聚类结果');
+                            /// -------- d3.js -------
+                            //准备复杂网络数据
+                            var g = {"nodes": [], "links": []};
+                            var cluster_result = resp_obj["result"];
+                            g.nodes.push({'id': 'root', 'group': -1, 'label': 'root'});
+                            for (var i = 0; i < cluster_result.length; i++) {
+                                console.log(cluster_result[i]);
+                                var item = cluster_result[i][0];
+                                /**var c_color = '#' + (Math.floor(Math.random() * 16777215).toString(16) + '000000').substr(0, 6);
+                                 var c_x = (Math.random() - 0.5) * 50;
+                                 var c_y = (Math.random() - 0.5) * 50;**/
+                                g.nodes.push({
+                                    "id": item,
+                                    "group": i,
+                                    'label': item
+                                });
+                                g.links.push({
+                                    'source': 'root',
+                                    'target': item,
+                                    'value': 1
+                                });
+                                var c_root_id = item;
+                                var last_item = c_root_id;
+                                for (var j = 1; j < cluster_result[i].length; j++) {
+                                    //console.log(i + "-" + j);
+                                    var n_item = cluster_result[i][j];
+                                    g.nodes.push({
+                                        "id": n_item,
+                                        "group": i,
+                                        'label': n_item
+                                    });
+                                    g.links.push({
+                                        'value': 1,
+                                        'source': c_root_id,
+                                        'target': n_item
+                                    });
+                                }
+                            }
+
+                            // d3 初始化
+                            var svg = d3.select("svg");
+
+                            svg.selectAll('*').remove();
+                            var c_canvas = $('#cluster_canvas');
+                            var svg_width = 1000 * 0.9;
+                            var svg_height = 500 * 0.9;
+                            //console.log(c_canvas.parentElement().width + '-' + c_canvas.parentElement().height);
+                            console.log('svg_width:' + svg_width + '\theight:' + svg_height);
+
+                            var color = d3.scaleOrdinal(d3.schemeCategory20);
+
+                            var simulation = d3.forceSimulation()
+                                    .force("link", d3.forceLink().id(function (d) {
+                                        return d.id;
+                                    }))
+                                    .force("charge", d3.forceManyBody())
+                                    .force("center", d3.forceCenter(svg_width / 2, svg_height / 2));
+
+
+                            var link = svg.append("g")
+                                    .attr("class", "links")
+                                    .selectAll("line")
+                                    .data(g.links)
+                                    .enter().append("line")
+                                    .attr("stroke-width", function (d) {
+                                        return Math.sqrt(d.value);
+                                    });
+
+                            var node = svg.append("g")
+                                    .attr("class", "nodes")
+                                    .selectAll("circle")
+                                    .data(g.nodes)
+                                    .enter()
+                                    .append("circle")
+                                    .attr("r", 5)
+                                    .attr("fill", function (d) {
+                                        return color(d.group);
+                                    })
+                                    .call(d3.drag()
+                                            .on("start", dragstarted)
+                                            .on("drag", dragged)
+                                            .on("end", dragended));
+
+                            var anchorNode = svg.append('g').attr('class', 'labels').selectAll("g.labels").data(g.nodes)
+                                    .enter().append("svg:text").text(function (d) {
+                                        return d.label;
+                                    }).style("fill", "#555").style("font-family", "Arial").style("font-size", 6)
+                                    .call(d3.drag()
+                                            .on("start", dragstarted)
+                                            .on("drag", dragged)
+                                            .on("end", dragended));
+                            //anchorNode.append("svg:circle").attr("r", 0).style("fill", "#FFF");
+
+
+                            simulation
+                                    .nodes(g.nodes)
+                                    .on("tick", ticked);
+
+                            simulation.force("link")
+                                    .links(g.links);
+                            var zoom = d3.zoom()
+                                    .on("zoom", zoomed);
+
+                            svg
+                                    .on("wheel", wheeled)
+                                    .call(zoom)
+                                    .call(zoom.transform, d3.zoomIdentity
+                                            .translate(svg_width / 2, svg_height / 2)
+                                            .scale(0.5)
+                                            .translate(-svg_width / 2, -svg_height / 2));
+                            svg.call(zoom);
+
+                            function wheeled() {
+                                console.log(d3.event);
+                            }
+
+                            function zoomed() {
+                                node.attr("transform", d3.event.transform);
+                                link.attr("transform", d3.event.transform);
+                                anchorNode.attr("transform", d3.event.transform);
+                            }
+
+                            function ticked() {
+                                link
+                                        .attr("x1", function (d) {
+                                            return d.source.x;
+                                        })
+                                        .attr("y1", function (d) {
+                                            return d.source.y;
+                                        })
+                                        .attr("x2", function (d) {
+                                            return d.target.x;
+                                        })
+                                        .attr("y2", function (d) {
+                                            return d.target.y;
+                                        });
+
+                                node
+                                        .attr("cx", function (d) {
+                                            return d.x;
+                                        })
+                                        .attr("cy", function (d) {
+                                            return d.y;
+                                        });
+                                anchorNode
+                                        .attr("x", function (d) {
+                                            return d.x;
+                                        })
+                                        .attr("y", function (d) {
+                                            return d.y;
+                                        });
+                            }
+
+                            function dragstarted(d) {
+                                if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+                                d.fx = d.x;
+                                d.fy = d.y;
+                            }
+
+                            function dragged(d) {
+                                d.fx = d3.event.x;
+                                d.fy = d3.event.y;
+                            }
+
+                            function dragended(d) {
+                                if (!d3.event.active) simulation.alphaTarget(0);
+                                d.fx = null;
+                                d.fy = null;
+                            }
+
+
+                        }
+                        else {
+                            alert("请求错误,详情=" + resp_obj.toString());
+                        }
+                    }
+                    else {
+                        alert("请求失败");
+                    }
+                }
+        ).fail(function () {
+            alert("请求失败");
+        });
+    });
+
+
+</script>
 </body>
+
 </html>

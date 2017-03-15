@@ -77,7 +77,7 @@ def query_similar_songs(song_name=None):
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
-        resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+        resp = make_response(json.dumps(res, ensure_ascii=False), 200)
     resp.mimetype = 'application/json'
     return resp
 
@@ -114,7 +114,7 @@ def query_similar_artist(artist_name=None):
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
-        resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+        resp = make_response(json.dumps(res, ensure_ascii=False), 200)
     resp.mimetype = 'application/json'
     return resp
 
@@ -139,7 +139,7 @@ def cluster_playlist_by_plid(plid=None):
         resp.mimetype = 'application/json'
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
-        resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+        resp = make_response(json.dumps(res, ensure_ascii=False), 200)
         resp.mimetype = 'application/json'
     return resp
 
@@ -153,21 +153,30 @@ def cluster_playlist_by_url():
             req_obj = request.form
         url = req_obj['url']
         cluster_type = req_obj['type']
+        is_detailed = req_obj.get('is_detailed') if req_obj.get('is_detailed') else False
         plid = re.findall('\d{4,}', url)[0]
         if request.args.get('cluster_n'):
             cluster_n = eval(request.args.get('cluster_n'))
         else:
             cluster_n = 5
+
         if cluster_type == 'artist':
-            cluster_res, playlist_name = s2v_operator.cluster_artist_in_playlist(plid, cluster_n=cluster_n)
+            cluster_res, playlist_name, detail_infos = s2v_operator.cluster_artist_in_playlist(plid,
+                                                                                               cluster_n=cluster_n,
+                                                                                               is_detailed=is_detailed)
         else:
-            cluster_res, playlist_name = s2v_operator.cluster_song_in_playlist(plid, cluster_n=cluster_n)
-        result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name, 'type': cluster_type}
+            cluster_res, playlist_name, detail_infos = s2v_operator.cluster_song_in_playlist(plid, cluster_n=cluster_n,
+                                                                                             is_detailed=is_detailed)
+        if is_detailed:
+            result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name, 'type': cluster_type,
+                      'detail_infos': detail_infos}
+        else:
+            result = {'code': 200, 'result': cluster_res, 'playlist_name': playlist_name, 'type': cluster_type}
         resp = make_response(json.dumps(result, ensure_ascii=False), 200)
         resp.mimetype = 'application/json'
     except Exception, e:
         res = {'code': 400, 'error_msg': e.message}
-        resp = make_response(json.dumps(res, ensure_ascii=False), 400)
+        resp = make_response(json.dumps(res, ensure_ascii=False), 200)
         resp.mimetype = 'application/json'
     return resp
 

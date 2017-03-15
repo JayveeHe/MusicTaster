@@ -99,6 +99,7 @@ class Song2VecOperator:
             return result[:topn]
         except Exception, e:
             print 'error = %s' % e
+            raise e
 
     def calc_artist_similar(self, positive_songs=[], negative_songs=[],
                             positive_artists=[], negative_artists=[],
@@ -162,13 +163,15 @@ class Song2VecOperator:
             return result[:topn]
         except Exception, e:
             print 'error = %s' % e
+            raise e
 
-    def cluster_song_in_playlist(self, playlist_id, cluster_n=5):
+    def cluster_song_in_playlist(self, playlist_id, cluster_n=5, is_detailed=False):
         """
         获取单个歌单内的歌曲聚类信息
         Args:
             playlist_id: 歌单id
             cluster_n:聚类数
+            is_detailed: 返回的结果是否包含详情
 
         Returns:
             聚类后的列表
@@ -176,10 +179,18 @@ class Song2VecOperator:
         playlist_obj = playlist_detail(playlist_id)
         song_list = []
         vec_list = []
+        song_info_dict = {}
         ap_cluster = AffinityPropagation()
         data_process_logger.info('clustering playlist: %s' % playlist_obj['name'])
         for item in playlist_obj['tracks']:
             song = item['name'].lower()
+            song_info_dict[song] = {
+                'name': song,
+                'artist': item['artists'][0]['name'],
+                'id': item['id'],
+                'album_img_url': item['album']['picUrl'],
+                'site_url': 'http://music.163.com/#/song?id=%s' % item['id']
+            }
             # print song
             if song not in song_list:
                 song_list.append(song)
@@ -200,16 +211,17 @@ class Song2VecOperator:
                 label = cluster_result.labels_[i]
                 index = i
                 cluster_array[label].append(song_list[i])
-            return cluster_array, playlist_obj['name']
+            return cluster_array, playlist_obj['name'], song_info_dict
         else:
-            return [song_list], playlist_obj['name']
+            return [song_list], playlist_obj['name'], song_info_dict
 
-    def cluster_artist_in_playlist(self, playlist_id, cluster_n=5):
+    def cluster_artist_in_playlist(self, playlist_id, cluster_n=5, is_detailed=False):
         """
         获取单个歌单内的歌手聚类信息
         Args:
             playlist_id: 歌单id
             cluster_n:聚类数
+            is_detailed: 是否包含详情信息
 
         Returns:
             聚类后的列表
@@ -242,9 +254,9 @@ class Song2VecOperator:
                 label = cluster_result.labels_[i]
                 index = i
                 cluster_array[label].append(artist_list[i])
-            return cluster_array, playlist_obj['name']
+            return cluster_array, playlist_obj['name'], {}
         else:
-            return [artist_list], playlist_obj['name']
+            return [artist_list], playlist_obj['name'], {}
 
 
 if __name__ == '__main__':
@@ -257,5 +269,5 @@ if __name__ == '__main__':
     #                                     artist_weight=1.0, topn=20)
     # for i in res:
     #     print i[0], i[1]
-    # s2vo.cluster_song_in_playlist('3659853')
-    s2vo.cluster_artist_in_playlist('3659853')
+    s2vo.cluster_song_in_playlist('3659853')
+    # s2vo.cluster_artist_in_playlist('3659853')
