@@ -105,7 +105,7 @@
                             "negative_artists": [],
                             "top_n": 15
                         };
-                        $.ajax('/similar/song', {
+                        $.ajax('/musictaster/similar/song', {
                             'data': JSON.stringify(send_datas), //{action:'x',params:['a','b','c']}
                             'type': 'POST',
                             'processData': false,
@@ -218,7 +218,7 @@
             type: "song",
             is_detailed: true
         };
-        $.ajax('/cluster/playlist/url', {
+        $.ajax('/musictaster/cluster/playlist/url', {
             'data': JSON.stringify(send_datas), //{action:'x',params:['a','b','c']}
             'type': 'POST',
             'processData': false,

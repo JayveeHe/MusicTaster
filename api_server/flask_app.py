@@ -32,13 +32,13 @@ s2v_operator = Song2VecOperator(
 data_process_logger.info('complete init song2vec')
 
 
-@app.route('/')
+@app.route('/musictaster')
 def hello_world():
     return render_template("demo.html")
 
 
-@app.route('/similar/song', methods=['POST'])
-@app.route('/similar/song/<song_name>', methods=['GET'])
+@app.route('/musictaster/similar/song', methods=['POST'])
+@app.route('/musictaster/similar/song/<song_name>', methods=['GET'])
 def query_similar_songs(song_name=None):
     """
     查询最近似的歌曲,方法可以为GET或POST
@@ -82,8 +82,8 @@ def query_similar_songs(song_name=None):
     return resp
 
 
-@app.route('/similar/artist', methods=['POST'])
-@app.route('/similar/artist/<artist_name>', methods=['GET'])
+@app.route('/musictaster/similar/artist', methods=['POST'])
+@app.route('/musictaster/similar/artist/<artist_name>', methods=['GET'])
 def query_similar_artist(artist_name=None):
     try:
         if request.method == 'GET':
@@ -119,7 +119,7 @@ def query_similar_artist(artist_name=None):
     return resp
 
 
-@app.route('/cluster/playlist/id/<plid>', methods=['GET'])
+@app.route('/musictaster/cluster/playlist/id/<plid>', methods=['GET'])
 def cluster_playlist_by_plid(plid=None):
     try:
         if request.args.get('cluster_n'):
@@ -144,7 +144,7 @@ def cluster_playlist_by_plid(plid=None):
     return resp
 
 
-@app.route('/cluster/playlist/url', methods=['POST'])
+@app.route('/musictaster/cluster/playlist/url', methods=['POST'])
 def cluster_playlist_by_url():
     try:
         if len(request.data):
