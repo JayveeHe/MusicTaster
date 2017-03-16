@@ -24,8 +24,8 @@
 2. 安装`requirements.txt`下的依赖包
 
 ## Demo
-歌单聚类:
-http://180.76.179.18:2335
+
+[http://www.jayveehe.com/musictaster](http://www.jayveehe.com/musictaster)
 
 
 
