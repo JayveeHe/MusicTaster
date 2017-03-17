@@ -63,7 +63,7 @@ def query_similar_songs(song_name=None):
                 'positive_artists') else []
             negative_artists = lower_array(req_data_obj.get('negative_artists')) if req_data_obj.get(
                 'negative_artists') else []
-            top_n = req_data_obj.get('top_n') if req_data_obj.get('top_n') else 10
+            top_n = int(req_data_obj.get('top_n')) if req_data_obj.get('top_n') else 10
             sim_res = s2v_operator.calc_song_similar(positive_songs=positive_songs,
                                                      negative_songs=negative_songs,
                                                      positive_artists=positive_artists,

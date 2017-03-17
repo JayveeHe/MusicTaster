@@ -44,7 +44,8 @@
                 A demo based on Song2Vec and Artist2Vec
             </p>
             <p>
-                欢迎Star@Github <a href="https://github.com/JayveeHe/MusicTaster">https://github.com/JayveeHe/MusicTaster</a>
+                欢迎Star@Github <a
+                    href="https://github.com/JayveeHe/MusicTaster">https://github.com/JayveeHe/MusicTaster</a>
             </p>
             <hr/>
         </div>
@@ -74,7 +75,7 @@
                 <input style="max-width: 100% ;width:100%;height: 80%;" id="input_url"
                        class="form-control has-success" value="http://music.163.com/#/playlist?id=3659853">
                 <button class="btn btn-info" id="btn_url_send" style="margin-top: 5%; width: 100%;">确认</button>
-
+                <hr>
             </div>
 
         </div>
@@ -86,62 +87,20 @@
     <div class="row" style="width: 100%;margin-top: 20px">
         <div class="col-md-1"></div>
         <div class="col-md-10">
-            <h6>
-                歌曲风格:
-            </h6>
-            <span>找出与给定歌曲(可多个)的风格近似的其他歌曲</span>
-            <hr/>
-            <div class="tagsinput-primary">
-                <input name="tagsinput" class="tagsinput" id="input_name" data-role="tagsinput" value="贝加尔湖畔,虎口脱险"
-                       style="display: none;">
-                <button class="btn btn-info" id="btn_name_send" style="margin-top: 5%; width: 100%;">确认</button>
-                <script>
-                    $('#btn_name_send').click(function () {
-                        var input_names_str = $('#input_name');
-                        console.log(input_names_str.val());
-                        var song_names = input_names_str.val().split(',');
-                        console.log(song_names);
-                        var send_datas = {
-                            "positive_songs": song_names,
-                            "negative_songs": [],
-                            "positive_artists": [],
-                            "negative_artists": [],
-                            "top_n": 15
-                        };
-                        $.ajax('/musictaster/similar/song', {
-                            'data': JSON.stringify(send_datas), //{action:'x',params:['a','b','c']}
-                            'type': 'POST',
-                            'processData': false,
-                            'contentType': 'application/json' //typically 'application/x-www-form-urlencoded', but the service you are calling may expect 'text/json'... check with the service to see what they expect as content-type in the HTTP header.
-                        }).done(function (data, status) {
-                                    if (status == "success") {
-                                        var resp_obj = eval(data);
-                                        if (resp_obj['code'] == 200) {
-                                            // parse cluster result
-                                            //解析聚类结果
-                                            $("#show_similar").modal('toggle');
-                                            var similar_result = $("#song_similar_text");
-                                            similar_result.empty();
-                                            similar_result.append("<tr><td>歌曲名</td><td>相似度</td></tr>");
-                                            for (var i = 0; i < resp_obj['result'].length; i++) {
-                                                console.log(resp_obj['result'][i]['name'] + '-' + resp_obj['result'][i]['similarity']);
-                                                similar_result.append('<tr><td>' + resp_obj['result'][i]['name'] + '</td><td>' + resp_obj['result'][i]['similarity'] + '</td></tr>');
-                                            }
-                                        }
-                                        else {
-                                            alert("请求错误,详情=" + resp_obj['error_msg']);
-                                        }
-                                    }
-                                    else {
-                                        alert("请求失败," + data.toString());
-                                    }
-                                }
-                        ).fail(function (data) {
-                            alert("请求失败, 原因=" + data);
-                        });
-                    })
-
-                </script>
+            <div class="row">
+                <h6>
+                    歌曲风格:
+                </h6>
+                <span>找出与给定歌曲(可多个)的风格近似的其他歌曲</span>
+                <hr/>
+            </div>
+            <div class="row">
+                <div class="tagsinput-primary">
+                    <input name="tagsinput" class="tagsinput" id="input_name" data-role="tagsinput" value="贝加尔湖畔,虎口脱险"
+                           style="display: none;">
+                    结果数: <input type="number" id="input_sim_num" value=15 style="margin: 10px">
+                </div>
+                <button class="btn btn-info" id="btn_name_send" style=" width: 100%;">确认</button>
             </div>
         </div>
         <div class="col-md-1"></div>
@@ -421,6 +380,55 @@
         });
     });
 
+
+</script>
+<script>
+    $('#btn_name_send').click(function () {
+        var input_names_str = $('#input_name');
+        console.log(input_names_str.val());
+        var song_names = input_names_str.val().split(',');
+        console.log(song_names);
+        var input_num = $("#input_sim_num").val();
+        console.log(input_num);
+        var send_datas = {
+            "positive_songs": song_names,
+            "negative_songs": [],
+            "positive_artists": [],
+            "negative_artists": [],
+            "top_n": input_num
+        };
+        $.ajax('/musictaster/similar/song', {
+            'data': JSON.stringify(send_datas), //{action:'x',params:['a','b','c']}
+            'type': 'POST',
+            'processData': false,
+            'contentType': 'application/json' //typically 'application/x-www-form-urlencoded', but the service you are calling may expect 'text/json'... check with the service to see what they expect as content-type in the HTTP header.
+        }).done(function (data, status) {
+                    if (status == "success") {
+                        var resp_obj = eval(data);
+                        if (resp_obj['code'] == 200) {
+                            // parse cluster result
+                            //解析聚类结果
+                            $("#show_similar").modal('toggle');
+                            var similar_result = $("#song_similar_text");
+                            similar_result.empty();
+                            similar_result.append("<tr><td>歌曲名</td><td>相似度</td></tr>");
+                            for (var i = 0; i < resp_obj['result'].length; i++) {
+                                console.log(resp_obj['result'][i]['name'] + '-' + resp_obj['result'][i]['similarity']);
+                                similar_result.append('<tr><td>' + resp_obj['result'][i]['name'] + '</td><td>' + resp_obj['result'][i]['similarity'] + '</td></tr>');
+                            }
+                        }
+                        else {
+                            alert("请求错误,详情=" + resp_obj['error_msg']);
+                        }
+                    }
+                    else {
+                        alert("请求失败," + data.toString());
+                    }
+                }
+        ).fail(function (data) {
+            alert("请求失败, 原因=" + data);
+        });
+    })
 
 </script>
 </body>
