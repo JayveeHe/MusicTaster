@@ -65,6 +65,7 @@ class Song2VecOperator:
             all_words, mean = set(), []
             if positive_songs + negative_songs:
                 for song, weight in positive_songs + negative_songs:
+                    song = song.strip()
                     if isinstance(song, ndarray):
                         mean.append(weight * song)
                     elif song in self.song2vec_model.vocab:
