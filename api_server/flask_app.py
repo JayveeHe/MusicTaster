@@ -27,8 +27,8 @@ app = Flask(__name__)
 
 data_process_logger.info('initing song2vec operator')
 s2v_operator = Song2VecOperator(
-    song2vec_model_path='%s/datas/[full]50d_20iter_10win_5min_song2vec.model' % PROJECT_PATH,
-    artist2vec_model_path='%s/datas/[full]50d_20iter_10win_5min_artist2vec.model' % PROJECT_PATH)
+    song2vec_model_path='%s/datas/full_50d_20iter_10win_5min_song2vec.model' % PROJECT_PATH,
+    artist2vec_model_path='%s/datas/full_50d_20iter_10win_5min_artist2vec.model' % PROJECT_PATH)
 data_process_logger.info('complete init song2vec')
 
 
