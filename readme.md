@@ -29,9 +29,9 @@
 
 ## Data
 Google Drive
-[Artists Seq Data](https://drive.google.com/file/d/1fO4BkXBB9Rf5DsF7kggr6lROA4gmAB3Z/view?usp=sharing)
-[Songs Seq Data](https://drive.google.com/file/d/1_kwmQ87kz3kHIRcAUdFaXY0_x2KCMyBw/view?usp=sharing)
-[Artists x Songs Seq Data](https://drive.google.com/file/d/1IHetYu7Lrd_6jVurmq3_0oZ-OalEk5w2/view?usp=sharing)
+- [Artists Seq Data](https://drive.google.com/file/d/1fO4BkXBB9Rf5DsF7kggr6lROA4gmAB3Z/view?usp=sharing)
+- [Songs Seq Data](https://drive.google.com/file/d/1_kwmQ87kz3kHIRcAUdFaXY0_x2KCMyBw/view?usp=sharing)
+- [Artists x Songs Seq Data](https://drive.google.com/file/d/1IHetYu7Lrd_6jVurmq3_0oZ-OalEk5w2/view?usp=sharing)
 
 使用方法:
 1. 下载对应的dat文件
